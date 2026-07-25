@@ -1,0 +1,827 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ─── Organization ────────────────────────────────────────────────────────────
+
+model Organization {
+  id               String             @id @default(uuid())
+  name             String
+  slug             String             @unique
+  email            String?
+  mobile           String?
+  address          String?
+  city             String?
+  state            String?
+  country          String?            @default("India")
+  pincode          String?
+  gstNumber        String?
+  panNumber        String?
+  website          String?
+  logo             String?
+  status           OrganizationStatus @default(Active)
+  maxUsers         Int                @default(25)
+  maxStorageGb     Int                @default(10)
+  subscriptionTier String             @default("free")
+  settings         Json?
+  createdById      String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  isDeleted        Boolean            @default(false)
+  deletedAt        DateTime?
+  users            User[]
+  departments      Department[]
+  teams            Team[]
+  tasks            Task[]
+  labels           Label[]
+  templates        TaskTemplate[]
+  salaryAdjustments SalaryAdjustment[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  statusPipelines  StatusPipeline[]
+  eventRules       EventRule[]
+  automations      AutomationRule[]
+  savedFilters     SavedFilter[]
+  customViews      CustomView[]
+  activityFeed     ActivityFeed[]
+
+  @@index([status])
+  @@index([email])
+  @@index([name])
+  @@index([isDeleted])
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id                  String           @id @default(uuid())
+  email               String           @unique
+  password            String
+  userType            UserType         @default(EMPLOYEE)
+  role                UserRole         @default(EMPLOYEE)
+  organizationType    OrganizationType @default(COMPANY)
+  isActive            Boolean          @default(false)
+  isVerified          Boolean          @default(false)
+  otp                 String?
+  otpExpiry           DateTime?
+  otpAttempts         Int              @default(0)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  avatar              String?
+  department          String?
+  designation         String?
+  failedLoginAttempts Int              @default(0)
+  isLocked            Boolean          @default(false)
+  lastLogin           DateTime?
+  lockedUntil         DateTime?
+  mobile              String?
+  name                String?
+  organizationId      String?
+  passwordHistory     Json?
+  passwordVersion     Int              @default(1)
+  sessions            Session[]
+  refreshTokens       RefreshToken[]
+  organization        Organization?    @relation(fields: [organizationId], references: [id])
+  assignedTasks       Task[]           @relation("TaskAssignee")
+  createdTasks        Task[]           @relation("TaskCreator")
+  teamMemberships     TeamMember[]
+  departmentMemberships DepartmentMember[]
+  comments            TaskComment[]
+  timeEntries         TimeEntry[]
+  notifications       Notification[]
+  savedFilters        SavedFilter[]
+  customViews         CustomView[]
+  taskWatchers        TaskWatcher[]
+
+  @@index([email])
+  @@index([role])
+  @@index([userType])
+  @@index([organizationId])
+  @@index([organizationId, role])
+}
+
+// ─── Auth Support Models ─────────────────────────────────────────────────────
+
+model Session {
+  id             String         @id @default(uuid())
+  userId         String
+  organizationId String?
+  token          String         @unique
+  refreshToken   String?
+  device         String?
+  browser        String?
+  os             String?
+  ipAddress      String?
+  userAgent      String?
+  loginAt        DateTime       @default(now())
+  lastActivity   DateTime       @default(now())
+  expiresAt      DateTime
+  idleExpiresAt  DateTime
+  isRevoked      Boolean        @default(false)
+  revokedAt      DateTime?
+  isRememberMe   Boolean        @default(false)
+  refreshTokens  RefreshToken[]
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([userId, isRevoked])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id                  String    @id @default(uuid())
+  tokenHash           String    @unique
+  sessionId           String
+  userId              String
+  organizationId      String?
+  expiresAt           DateTime
+  isRevoked           Boolean   @default(false)
+  revokedAt           DateTime?
+  replacedByTokenHash String?
+  session             Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model Role {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  permissions    String[]
+  isSystem       Boolean  @default(false)
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?
+  userId         String?
+  sessionId      String?
+  action         String
+  resource       String?
+  resourceId     String?
+  metadata       Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model LoginAttempt {
+  id             String    @id @default(uuid())
+  email          String
+  organizationId String?
+  ipAddress      String?
+  userAgent      String?
+  success        Boolean
+  failureReason  String?
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+  @@index([email, createdAt])
+}
+
+model OtpChallenge {
+  id          String     @id @default(uuid())
+  email       String
+  userId      String?
+  purpose     OtpPurpose
+  codeHash    String
+  expiresAt   DateTime
+  attempts    Int        @default(0)
+  maxAttempts Int
+  resendCount Int        @default(0)
+  maxResends  Int
+  consumedAt  DateTime?
+  lastSentAt  DateTime   @default(now())
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([email, purpose, consumedAt])
+  @@index([userId, purpose])
+  @@index([expiresAt])
+}
+
+model StatusPipeline {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  entityType         String
+  status             String
+  order              Int
+  label              String?
+  color              String?
+  allowedTransitions String[]
+  isInitial          Boolean  @default(false)
+  isFinal            Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization       Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, entityType, status])
+  @@index([organizationId, entityType, order])
+  @@index([organizationId, entityType])
+}
+
+model EventRule {
+  id             String   @id @default(uuid())
+  organizationId String
+  entityType     String
+  eventType      String
+  fromStatus     String?
+  toStatus       String
+  fromStage      String?
+  toStage        String?
+  condition      Json?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, entityType, eventType, fromStatus])
+  @@index([organizationId, entityType, isActive])
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserType {
+  SYSTEM_ADMIN
+  COMPANY_ADMIN
+  EMPLOYEE
+  MANAGER
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  OWNER
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum OrganizationType {
+  SYSTEM
+  COMPANY
+}
+
+enum OrganizationStatus {
+  Active
+  Inactive
+  Suspended
+}
+
+enum OtpPurpose {
+  REGISTRATION
+  FORGOT_PASSWORD
+  EMAIL_VERIFICATION
+  CHANGE_EMAIL
+  TWO_FACTOR
+  ORGANIZATION_INVITE
+}
+
+// ─── Task Management ─────────────────────────────────────────────────────────
+
+enum TaskStatus {
+  Todo
+  InProgress
+  Blocked
+  Review
+  Completed
+  Verified
+  Rejected
+  Closed
+  Cancelled
+  Reopened
+}
+
+enum TaskPriority {
+  None
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum TaskCategory {
+  General
+  Office
+  FieldWork
+  Maintenance
+  Installation
+  Inspection
+  Documentation
+  Meeting
+  Training
+  Other
+}
+
+enum SalaryAdjustmentType {
+  Credit
+  Deduction
+  Advance
+  Bonus
+  Penalty
+}
+
+enum SalaryAdjustmentStatus {
+  Pending
+  Approved
+  Rejected
+  Processed
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_COMPLETED
+  TASK_VERIFIED
+  TASK_REJECTED
+  COMMENT_ADDED
+  MENTION
+  STATUS_CHANGED
+  DUE_DATE_REMINDER
+  SLA_BREACH
+  APPROVAL_REQUIRED
+}
+
+// ─── Task Models ─────────────────────────────────────────────────────────────
+
+model Task {
+  id                  String          @id @default(uuid())
+  organizationId      String
+  taskId              Int             @unique @default(autoincrement())
+  title               String
+  description         String?
+
+  // Assignment
+  assignedUserId      String?
+  assignedUserName    String?
+  createdById         String
+  createdByName       String
+
+  // Parent/Child
+  parentTaskId        String?
+
+  // Dates
+  startDate           DateTime?
+  dueDate             DateTime?
+  reminderDate        DateTime?
+  completedAt         DateTime?
+  verifiedAt          DateTime?
+  closedAt            DateTime?
+
+  // Status & Priority
+  status              TaskStatus      @default(Todo)
+  priority            TaskPriority    @default(Medium)
+  category            TaskCategory?
+
+  // Progress & Time
+  progress            Int             @default(0)
+  estimatedHours      Float?
+  timeSpent           Float?
+
+  // Payment
+  incentiveValue      Float           @default(0)
+
+  // Completion
+  completionNotes     String?
+  completionProof     Json?
+  beforeImages        String[]
+  afterImages         String[]
+
+  // Verification
+  verifiedBy          String?
+  verifiedByName      String?
+  verificationNotes   String?
+
+  // Notes
+  notes               String?
+  internalNotes       String?
+
+  // Tags
+  tags                String[]
+
+  // SLA
+  slaDueDate          DateTime?
+  slaBreached         Boolean         @default(false)
+
+  // Metadata
+  isArchived          Boolean         @default(false)
+  archivedAt          DateTime?
+  createdById_field   String?
+  createdBy           String?
+  updatedBy           String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  isDeleted           Boolean         @default(false)
+  deletedAt           DateTime?
+  deletedById         String?
+
+  // Relations
+  organization        Organization    @relation(fields: [organizationId], references: [id])
+  assignee            User?           @relation("TaskAssignee", fields: [assignedUserId], references: [id])
+  creator             User            @relation("TaskCreator", fields: [createdById], references: [id])
+  parentTask          Task?           @relation("Subtasks", fields: [parentTaskId], references: [id])
+  subtasks            Task[]          @relation("Subtasks")
+  checklist           TaskChecklist[]
+  comments            TaskComment[]
+  attachments         TaskAttachment[]
+  dependencies        TaskDependency[]
+  activities          TaskActivityLog[]
+  labels              TaskLabel[]
+  watchers            TaskWatcher[]
+  timeEntries         TimeEntry[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, priority])
+  @@index([assignedUserId])
+  @@index([createdById])
+  @@index([parentTaskId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([isDeleted])
+  @@index([isArchived])
+  @@index([organizationId, isDeleted])
+}
+
+model TaskChecklist {
+  id             String   @id @default(uuid())
+  taskId         String
+  text           String
+  completed      Boolean  @default(false)
+  completedAt    DateTime?
+  completedBy    String?
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskComment {
+  id             String   @id @default(uuid())
+  taskId         String
+  content        String
+  authorId       String
+  authorName     String
+  isInternal     Boolean  @default(false)
+  mentions       String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  isDeleted      Boolean  @default(false)
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author         User     @relation(fields: [authorId], references: [id])
+
+  @@index([taskId])
+  @@index([taskId, createdAt])
+}
+
+model TaskAttachment {
+  id             String   @id @default(uuid())
+  taskId         String
+  fileName       String
+  fileType       String
+  fileSize       Int
+  fileUrl        String
+  uploadedBy     String
+  uploadedByName String
+  description    String?
+  createdAt      DateTime @default(now())
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskDependency {
+  id             String   @id @default(uuid())
+  taskId         String
+  dependsOnTaskId String
+  relationship   String   @default("Depends On")
+  createdAt      DateTime @default(now())
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([dependsOnTaskId])
+}
+
+model TaskActivityLog {
+  id             String   @id @default(uuid())
+  taskId         String
+  activityType   String
+  description    String
+  performedBy    String
+  performedByName String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([taskId, createdAt])
+}
+
+// ─── Labels ──────────────────────────────────────────────────────────────────
+
+model Label {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  color          String       @default("#3ABEFF")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  tasks          TaskLabel[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model TaskLabel {
+  id        String   @id @default(uuid())
+  taskId    String
+  labelId   String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label     Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, labelId])
+  @@index([taskId])
+  @@index([labelId])
+}
+
+// ─── Watchers ────────────────────────────────────────────────────────────────
+
+model TaskWatcher {
+  id        String   @id @default(uuid())
+  taskId    String
+  userId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+// ─── Time Tracking ───────────────────────────────────────────────────────────
+
+model TimeEntry {
+  id          String    @id @default(uuid())
+  taskId      String
+  userId      String
+  description String?
+  startedAt   DateTime
+  endedAt     DateTime?
+  duration    Float?
+  createdAt   DateTime  @default(now())
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([userId, startedAt])
+}
+
+// ─── Departments & Teams ─────────────────────────────────────────────────────
+
+model Department {
+  id             String           @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  managerId      String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  isDeleted      Boolean          @default(false)
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  teams          Team[]
+  members        DepartmentMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model DepartmentMember {
+  id             String     @id @default(uuid())
+  departmentId   String
+  userId         String
+  role           String     @default("member")
+  createdAt      DateTime   @default(now())
+  department     Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, userId])
+  @@index([departmentId])
+  @@index([userId])
+}
+
+model Team {
+  id             String           @id @default(uuid())
+  organizationId String
+  departmentId   String?
+  name           String
+  description    String?
+  leadId         String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  isDeleted      Boolean          @default(false)
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  department     Department?      @relation(fields: [departmentId], references: [id])
+  members        TeamMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([departmentId])
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+model Notification {
+  id             String           @id @default(uuid())
+  organizationId String
+  userId         String
+  type           NotificationType
+  title          String
+  message        String
+  taskId         String?
+  isRead         Boolean          @default(false)
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  user           User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([organizationId])
+}
+
+// ─── Saved Filters & Custom Views ────────────────────────────────────────────
+
+model SavedFilter {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  name           String
+  filters        Json
+  isShared       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model CustomView {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  name           String
+  viewType       String
+  filters        Json
+  sortBy         String?
+  sortOrder      String?  @default("desc")
+  columns        Json?
+  isShared       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+// ─── Automation Rules ────────────────────────────────────────────────────────
+
+model AutomationRule {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  trigger        String
+  conditions     Json
+  actions        Json
+  isActive       Boolean  @default(true)
+  runCount       Int      @default(0)
+  lastRunAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, isActive])
+}
+
+// ─── Task Templates ──────────────────────────────────────────────────────────
+
+model TaskTemplate {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  defaults       Json
+  createdById    String
+  useCount       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+}
+
+// ─── Activity Feed ───────────────────────────────────────────────────────────
+
+model ActivityFeed {
+  id             String       @id @default(uuid())
+  organizationId String
+  entityType     String
+  entityId       String
+  activityType   String
+  description    String
+  performedBy    String
+  performedByName String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, createdAt])
+  @@index([performedBy])
+}
+
+// ─── Salary Adjustments ──────────────────────────────────────────────────────
+
+model SalaryAdjustment {
+  id              String                @id @default(uuid())
+  organizationId  String
+  employeeId      String
+  employeeName    String
+  type            SalaryAdjustmentType
+  amount          Float
+  description     String
+  reason          String?
+  referenceType   String?
+  referenceId     String?
+  referenceName   String?
+  status          SalaryAdjustmentStatus @default(Pending)
+  approvedBy      String?
+  approvedByName  String?
+  approvedAt      DateTime?
+  processedAt     DateTime?
+  processedBy     String?
+  notes           String?
+  createdById     String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  isDeleted       Boolean               @default(false)
+  organization    Organization          @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, employeeId])
+  @@index([organizationId, status])
+  @@index([employeeId])
+  @@index([isDeleted])
+}

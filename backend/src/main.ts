@@ -1,0 +1,91 @@
+import { NestFactory } from '@nestjs/core';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
+import helmet from '@fastify/helmet';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { GlobalValidationPipe } from './common/pipes/validation.pipe';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({ trustProxy: true }),
+    { bufferLogs: true },
+  );
+
+  const configService = app.get(ConfigService);
+  const nodeEnv = configService.get<string>('nodeEnv', 'development');
+
+  const fastify = app.getHttpAdapter().getInstance();
+  fastify.addHook('onRequest', async (request, reply) => {
+    const requestId = (request.headers['x-request-id'] as string) || randomUUID();
+    request.requestId = requestId;
+    reply.header('X-Request-ID', requestId);
+  });
+
+  app.useGlobalPipes(new GlobalValidationPipe());
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
+
+  await app.register(helmet, {
+    contentSecurityPolicy: nodeEnv === 'production',
+    crossOriginEmbedderPolicy: false,
+  });
+
+  const frontendUrl = configService.get<string>('frontendUrl');
+  if (!frontendUrl?.trim()) {
+    throw new Error('FRONTEND_URL is required for CORS configuration');
+  }
+  const allowedOrigins = frontendUrl
+    .split(',')
+    .map((u) => u.trim())
+    .filter(Boolean);
+  await app.register(cors, {
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID', 'X-Request-ID'],
+  });
+
+  await app.register(cookie, {
+    secret: configService.get<string>('cookieSecret')!,
+  });
+
+  await app.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+    },
+  });
+
+  if (nodeEnv !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Task Management API')
+      .setDescription('Task Management Backend API Documentation')
+      .setVersion('1.0')
+      .addTag('task', 'Task management endpoints')
+      .addTag('auth', 'Authentication endpoints')
+      .addTag('health', 'Health check endpoints')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api-docs', app, document);
+  }
+
+  app.enableShutdownHooks();
+
+  const port = configService.get<number>('port', 8000);
+  await app.listen(port, '0.0.0.0');
+}
+bootstrap().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`Backend startup failed: ${message}`);
+  process.exit(1);
+});
