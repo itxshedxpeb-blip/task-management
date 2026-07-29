@@ -2,7 +2,7 @@
  * Idempotent system bootstrap:
  * roles, status pipelines, event rules.
  */
-import { PrismaClient } from '../prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { SYSTEM_ROLE_DEFS } from './system-seed.constants';
 
 type Tx = Omit<

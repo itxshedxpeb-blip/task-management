@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AppVersion } from '../../prisma/client';
+import type { AppVersion } from '@prisma/client';
 
 @Injectable()
 export class AppVersionService {
@@ -27,7 +27,7 @@ export class AppVersionService {
     if (existing) {
       throw new BadRequestException(`Version ${data.version} already exists`);
     }
-
+9
     // If this is marked as latest, unmark previous latest versions for this platform
     if (data.isStable !== false) {
       await this.prisma.appVersion.updateMany({

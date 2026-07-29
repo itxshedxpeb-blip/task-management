@@ -4,7 +4,7 @@
  *
  * Usage: npx ts-node prisma/seed-admin.ts
  */
-import { PrismaClient, UserType, UserRole } from '../src/prisma/client';
+import { PrismaClient, UserType, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
