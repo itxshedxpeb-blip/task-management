@@ -22,7 +22,7 @@ interface TopbarProps {
 }
 
 export const Topbar = memo(function Topbar({ title, subtitle, showBackButton, onBackClick }: TopbarProps) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, setTheme, isMounted } = useTheme();
   const toggleSidebar = useSidebarStore((state) => state.toggleSidebar);
 
@@ -95,11 +95,13 @@ export const Topbar = memo(function Topbar({ title, subtitle, showBackButton, on
         <div className="flex items-center gap-3 pl-3 sm:pl-4 border-l border-border flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-primary-foreground text-xs font-medium">JD</span>
+              <span className="text-primary-foreground text-xs font-medium">
+                {user?.name ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+              </span>
             </div>
             <div className="hidden lg:block min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground truncate">Owner</p>
+              <p className="text-sm font-medium text-foreground truncate">{user?.name || 'User'}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() : 'Employee'}</p>
             </div>
           </div>
           <Button

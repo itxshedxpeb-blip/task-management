@@ -1,0 +1,73 @@
+# Render Blueprint - Complete Stack (Database + Backend + Frontend)
+databases:
+  - name: peb-crm-db
+    databaseName: peb-crm
+    user: pebcrm
+    plan: free
+    region: oregon
+
+services:
+  # Backend API
+  - type: web
+    name: peb-crm-api
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: cd backend && npm ci && npx prisma generate && npm run architecture:validate && npm run type-check && npm run build
+    startCommand: cd backend && node scripts/deploy-db.mjs && node dist/main.js
+    healthCheckPath: /live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "8000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: peb-crm-db
+          property: connectionString
+      - key: DIRECT_DATABASE_URL
+        fromDatabase:
+          name: peb-crm-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://peb-crm-web.onrender.com
+      - key: BACKEND_URL
+        value: https://peb-crm-api.onrender.com
+      - key: MAIL_PROVIDER
+        value: auto
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_FROM_NAME
+        sync: false
+      - key: BRAND_COMPANY_NAME
+        sync: false
+
+  # Frontend Web
+  - type: web
+    name: peb-crm-web
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: cd frontend && npm ci && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_URL
+        value: https://peb-crm-api.onrender.com

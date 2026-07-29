@@ -6,7 +6,6 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CalendarService } from './calendar.service';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('calendar')
 @ApiBearerAuth()
@@ -18,21 +17,18 @@ export class CalendarController {
   @RequirePermissions('task:list')
   @ApiOperation({ summary: 'Get tasks in date range' })
   async getEvents(
-    @CurrentUser('organizationId') organizationId: string,
     @Query('from') from: string,
     @Query('to') to: string,
   ) {
-    const data = await this.calendarService.getEvents(organizationId, from, to);
+    const data = await this.calendarService.getEvents(from, to);
     return { message: 'Calendar events fetched.', data };
   }
 
   @Get('recurring')
   @RequirePermissions('task:list')
   @ApiOperation({ summary: 'Get recurring events' })
-  async getRecurringEvents(
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.calendarService.getRecurringEvents(organizationId);
+  async getRecurringEvents() {
+    const data = await this.calendarService.getRecurringEvents();
     return { message: 'Recurring events fetched.', data };
   }
 }

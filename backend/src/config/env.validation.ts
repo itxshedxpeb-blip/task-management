@@ -52,8 +52,6 @@ export function validateEnv(): void {
     if (process.env.COOKIE_SECURE !== 'true') {
       throw new Error('COOKIE_SECURE must be true in production');
     }
-    // SMTP required in production for auth emails
-    ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM_EMAIL'].forEach(requireVar);
   }
 
   if (missing.length > 0) {

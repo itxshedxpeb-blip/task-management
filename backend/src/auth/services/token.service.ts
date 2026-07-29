@@ -16,27 +16,24 @@ export class TokenService {
     userId: string;
     email: string;
     role: string;
-    organizationId?: string;
     sessionId: string;
     permissionVersion?: number;
     passwordVersion?: number;
   }): string {
+    const expiresIn = this.configService.get<string>('jwt.expiresIn') || '30m';
     return this.jwtService.sign(
       {
         sub: params.userId,
         email: params.email,
         role: params.role,
-        organizationId: params.organizationId,
         sessionId: params.sessionId,
         permissionVersion: params.permissionVersion || 1,
         tokenVersion: 1,
         passwordVersion: params.passwordVersion || 1,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+      },
       {
-        expiresIn: this.configService.get<string>('jwt.accessExpiresIn') || '30m',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+        expiresIn: expiresIn as any,
+      },
     );
   }
 

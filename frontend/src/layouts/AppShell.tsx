@@ -4,17 +4,12 @@ import { ReactNode, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Inbox,
-  Briefcase,
+  ListTodo,
   Columns,
   Calendar,
-  GanttChart,
-  BarChart3,
-  Users,
-  Building2,
-  FileText,
-  Zap,
+  Compass,
+  StickyNote,
+  User,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -27,7 +22,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -54,7 +48,6 @@ interface NavItem {
   title: string;
   href: string;
   icon: LucideIcon;
-  badge?: number;
 }
 
 interface NavSection {
@@ -66,32 +59,24 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'OVERVIEW',
     items: [
-      { title: 'Overview', href: '/app', icon: LayoutDashboard },
-      { title: 'Inbox', href: '/app/inbox', icon: Inbox, badge: 5 },
-      { title: 'My Work', href: '/app/my-work', icon: Briefcase },
-    ],
-  },
-  {
-    label: 'VIEWS',
-    items: [
+      { title: 'Tasks', href: '/app/tasks', icon: ListTodo },
       { title: 'Board', href: '/app/board', icon: Columns },
       { title: 'Calendar', href: '/app/calendar', icon: Calendar },
-      { title: 'Timeline', href: '/app/timeline', icon: GanttChart },
     ],
   },
   {
-    label: 'WORKSPACE',
+    label: 'TOOLS',
     items: [
-      { title: 'Reports', href: '/app/reports', icon: BarChart3 },
-      { title: 'People', href: '/app/people', icon: Users },
-      { title: 'Departments', href: '/app/departments', icon: Building2 },
-      { title: 'Templates', href: '/app/templates', icon: FileText },
-      { title: 'Automations', href: '/app/automations', icon: Zap },
+      { title: 'Priority Matrix', href: '/app/priority-matrix', icon: Compass },
+      { title: 'Notes', href: '/app/notes', icon: StickyNote },
     ],
   },
   {
-    label: 'SETTINGS',
-    items: [{ title: 'Settings', href: '/app/settings', icon: Settings }],
+    label: 'ACCOUNT',
+    items: [
+      { title: 'Profile', href: '/app/profile', icon: User },
+      { title: 'Settings', href: '/app/settings', icon: Settings },
+    ],
   },
 ];
 
@@ -123,7 +108,7 @@ const AppSidebarNav = memo(function AppSidebarNav({
                   className={cn(
                     'flex items-center justify-center w-full h-10 rounded-lg transition-all duration-200',
                     active
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-blue-500/15 text-blue-500'
                       : 'text-muted-foreground hover:bg-card-hover hover:text-foreground'
                   )}
                 >
@@ -155,17 +140,12 @@ const AppSidebarNav = memo(function AppSidebarNav({
                     className={cn(
                       'flex items-center gap-3 px-4 h-10 rounded-lg transition-all duration-200',
                       active
-                        ? 'bg-primary/10 text-primary font-medium'
+                        ? 'bg-blue-500/15 text-blue-500 font-medium'
                         : 'text-muted-foreground hover:bg-card-hover hover:text-foreground'
                     )}
                   >
                     <Icon size={18} />
                     <span className="flex-1 text-sm truncate">{item.title}</span>
-                    {item.badge && item.badge > 0 && (
-                      <Badge className="h-5 min-w-[20px] px-1.5 text-[10px] bg-red-500 text-white border-0">
-                        {item.badge}
-                      </Badge>
-                    )}
                   </Link>
                 </li>
               );
@@ -206,7 +186,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile overlay */}
       {isOpen && !isDesktop && (
         <div
           className="fixed inset-0 z-30 bg-black/50 transition-opacity"
@@ -214,7 +193,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           'fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-border transition-all duration-300 flex flex-col overflow-hidden',
@@ -227,7 +205,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               : '-translate-x-full'
         )}
       >
-        {/* Logo */}
         <div
           className={cn(
             'flex items-center border-b border-border flex-shrink-0 transition-all',
@@ -238,8 +215,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           {(!isCollapsed || !isDesktop) && (
             <Link href="/app" className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-foreground font-bold text-sm">TF</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-sm">TF</span>
               </div>
               <span className="text-lg font-bold text-foreground tracking-tight truncate">
                 TaskFlow
@@ -249,13 +226,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           {isCollapsed && isDesktop && (
             <Link href="/app" title="TaskFlow" className="flex items-center justify-center">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">TF</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">TF</span>
               </div>
             </Link>
           )}
 
-          {/* Collapse toggle (desktop only) */}
           {isDesktop && (
             <button
               type="button"
@@ -267,7 +243,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           )}
 
-          {/* Close button (mobile only) */}
           {!isDesktop && (
             <button
               type="button"
@@ -280,41 +255,36 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Navigation */}
-        <AppSidebarNav pathname={pathname} collapsed={isCollapsed && isDesktop} />
+        <AppSidebarNav pathname={pathname || ''} collapsed={isCollapsed && isDesktop} />
 
-        {/* User section */}
         <div className={cn('border-t border-border flex-shrink-0', isCollapsed ? 'p-3' : 'px-4 py-3')}>
           {!isCollapsed || !isDesktop ? (
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary text-xs font-semibold">{initials}</span>
+              <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-500 text-xs font-semibold">{initials}</span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground truncate">{user?.name || 'User'}</p>
                 <p className="text-xs text-muted-foreground truncate capitalize">
-                  {user?.role?.toLowerCase().replace('_', ' ') || 'Member'}
+                  {user?.role?.toLowerCase().replace('_', ' ') || 'Employee'}
                 </p>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center" title={user?.name || 'User'}>
-                <span className="text-primary text-xs font-semibold">{initials}</span>
+              <div className="w-9 h-9 rounded-full bg-blue-500/10 flex items-center justify-center" title={user?.name || 'User'}>
+                <span className="text-blue-500 text-xs font-semibold">{initials}</span>
               </div>
             </div>
           )}
         </div>
       </aside>
 
-      {/* Main content */}
       <main
-        className="transition-all duration-300 min-h-screen"
-        style={{ marginLeft: sidebarWidth }}
+        className="transition-all duration-300 min-h-screen w-full"
+        style={isDesktop && sidebarWidth > 0 ? { marginLeft: `${sidebarWidth}px` } : undefined}
       >
-        {/* Top navbar */}
         <header className="h-14 bg-navbar border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
-          {/* Left */}
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -326,24 +296,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks, people, projects..."
-                className="w-64 lg:w-80 pl-10 h-9 text-sm"
+              <input
+                placeholder="Search tasks, notes..."
+                className="h-9 w-64 lg:w-80 pl-10 pr-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
 
-          {/* Right */}
           <div className="flex items-center gap-1">
-            {/* Notifications */}
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 flex items-center justify-center p-0 bg-red-500 text-white text-[9px] border-0">
-                5
+              <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 flex items-center justify-center p-0 bg-blue-500 text-white text-[9px] border-0">
+                0
               </Badge>
             </Button>
 
-            {/* Theme toggle */}
             <Button
               variant="ghost"
               size="icon"
@@ -353,12 +320,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               {isMounted && (theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />)}
             </Button>
 
-            {/* Profile dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 px-2 ml-1">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary text-[10px] font-semibold">{initials}</span>
+                  <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-500 text-[10px] font-semibold">{initials}</span>
                   </div>
                   <span className="hidden sm:inline text-sm font-medium text-foreground truncate max-w-[120px]">
                     {user?.name || 'User'}
@@ -373,10 +339,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/app/settings">Settings</Link>
+                  <Link href="/app/profile">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/app/settings/company">Company Settings</Link>
+                  <Link href="/app/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
@@ -388,7 +354,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page content */}
         <div className="p-4 lg:p-6">{children}</div>
       </main>
     </div>

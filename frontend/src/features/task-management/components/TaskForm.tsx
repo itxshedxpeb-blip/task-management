@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toInputDate } from '@/lib/date-utils';
 import { CreateTaskDto, LinkedModule, Task, TaskPriority } from '../types';
-import { useUsers } from '@/features/settings/hooks/useSettings';
+import { useAdminEmployees } from '@/modules/admin/hooks/useAdmin';
 
 interface TaskFormProps {
   task?: Task;
@@ -16,13 +17,14 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
-  const { data: users = [] } = useUsers();
+  const { data: usersData } = useAdminEmployees({ pageSize: 200 });
+  const users = usersData?.data?.rows || [];
   const [formData, setFormData] = useState({
     title: task?.title || '',
     description: task?.description || '',
     assignedUserId: task?.assignedUserId || '',
-    dueDate: task?.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
-    startDate: task?.startDate ? new Date(task.startDate).toISOString().split('T')[0] : '',
+    dueDate: toInputDate(task?.dueDate),
+    startDate: toInputDate(task?.startDate),
     priority: (task?.priority || 'Medium') as TaskPriority,
     linkedModule: (task?.linkedModule || 'General') as LinkedModule,
     linkedRecordId: task?.linkedRecordId || '',
@@ -32,7 +34,7 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
   });
 
   const modules: LinkedModule[] = ['General'];
-  const priorities: TaskPriority[] = ['Low', 'Medium', 'High', 'Critical'];
+  const priorities: TaskPriority[] = ['None', 'Low', 'Medium', 'High', 'Urgent'];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +48,7 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
       }
     }
 
-    const selectedUser = users.find((u) => u.id === formData.assignedUserId);
+    const selectedUser = users.find((u: any) => u.id === formData.assignedUserId);
 
     const dto: CreateTaskDto = {
       title: formData.title,
@@ -93,7 +95,7 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
               <SelectValue placeholder="Select a user" />
             </SelectTrigger>
             <SelectContent>
-              {users.map((user) => (
+              {users.map((user: any) => (
                 <SelectItem key={user.id} value={user.id}>
                   {user.name || user.email}
                 </SelectItem>

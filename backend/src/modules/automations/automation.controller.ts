@@ -12,7 +12,6 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AutomationService } from './automation.service';
 import { CreateAutomationDto } from './dto/create-automation.dto';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('automations')
 @ApiBearerAuth()
@@ -24,12 +23,11 @@ export class AutomationController {
   @RequirePermissions('automation:list')
   @ApiOperation({ summary: 'List automation rules' })
   async findAll(
-    @CurrentUser('organizationId') organizationId: string,
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
     @Query('search') search?: string,
   ) {
-    const data = await this.automationService.findAll(organizationId, {
+    const data = await this.automationService.findAll({
       page: Number(page) || 1,
       pageSize: Number(pageSize) || 25,
       search,
@@ -40,22 +38,16 @@ export class AutomationController {
   @Post()
   @RequirePermissions('automation:create')
   @ApiOperation({ summary: 'Create automation rule' })
-  async create(
-    @Body() dto: CreateAutomationDto,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.automationService.create(dto, organizationId);
+  async create(@Body() dto: CreateAutomationDto) {
+    const data = await this.automationService.create(dto);
     return { message: 'Automation rule created successfully.', data };
   }
 
   @Get(':id')
   @RequirePermissions('automation:list')
   @ApiOperation({ summary: 'Get automation rule' })
-  async findById(
-    @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.automationService.findById(id, organizationId);
+  async findById(@Param('id') id: string) {
+    const data = await this.automationService.findById(id);
     return { message: 'Automation rule fetched.', data };
   }
 
@@ -65,31 +57,24 @@ export class AutomationController {
   async update(
     @Param('id') id: string,
     @Body() dto: Partial<CreateAutomationDto>,
-    @CurrentUser('organizationId') organizationId: string,
   ) {
-    const data = await this.automationService.update(id, dto, organizationId);
+    const data = await this.automationService.update(id, dto);
     return { message: 'Automation rule updated.', data };
   }
 
   @Delete(':id')
   @RequirePermissions('automation:delete')
   @ApiOperation({ summary: 'Delete automation rule' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    await this.automationService.delete(id, organizationId);
+  async delete(@Param('id') id: string) {
+    await this.automationService.delete(id);
     return { message: 'Automation rule deleted successfully.' };
   }
 
   @Patch(':id/toggle')
   @RequirePermissions('automation:update')
   @ApiOperation({ summary: 'Toggle automation rule active/inactive' })
-  async toggle(
-    @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.automationService.toggle(id, organizationId);
+  async toggle(@Param('id') id: string) {
+    const data = await this.automationService.toggle(id);
     return { message: 'Automation rule toggled.', data };
   }
 }

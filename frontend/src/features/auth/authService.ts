@@ -6,7 +6,6 @@ export interface RegisterInput {
   password: string;
   confirmPassword: string;
   name?: string;
-  companyName?: string;
 }
 
 export interface LoginInput {
@@ -15,73 +14,32 @@ export interface LoginInput {
   rememberMe?: boolean;
 }
 
-export interface VerifyOtpInput {
-  email: string;
-  otp: string;
-}
-
-export interface ForgotPasswordInput {
-  email: string;
-}
-
-export interface OtpDeliveryResponse {
-  message: string;
-  email: string;
-  expiresAt: string;
-  expiresInMinutes: number;
-  resendAvailableInSeconds: number;
-  resendCount: number;
-}
-
-export interface ResetPasswordInput {
-  email: string;
-  otp: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
 export interface AuthUser {
   id: string;
   email: string;
   name?: string;
   role: string;
-  userType?: string;
-  organizationType: string;
-  organizationId?: string;
-  organizationName?: string;
+  userType: string;
   isActive?: boolean;
-  isVerified?: boolean;
 }
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken?: string;
   sessionId: string;
   expiresIn: number;
   user: AuthUser;
+  message: string;
 }
 
 export const authService = {
   register: (data: RegisterInput) =>
-    api.post<OtpDeliveryResponse>('/auth/register', data),
-
-  verifyOtp: (data: VerifyOtpInput) =>
-    api.post<AuthResponse & { message: string }>('/auth/verify-otp', data),
+    api.post<AuthResponse>('/auth/register', data),
 
   login: (data: LoginInput) =>
     api.post<AuthResponse>('/auth/login', data),
 
   logout: (sessionId: string) =>
     api.post<{ message: string }>('/auth/logout', { sessionId }),
-
-  forgotPassword: (data: ForgotPasswordInput) =>
-    api.post<OtpDeliveryResponse>('/auth/forgot-password', data),
-
-  resetPassword: (data: ResetPasswordInput) =>
-    api.post<{ message: string }>('/auth/reset-password', data),
-
-  resendOtp: (email: string, purpose: 'REGISTRATION' | 'FORGOT_PASSWORD' = 'REGISTRATION') =>
-    api.post<OtpDeliveryResponse>('/auth/resend-otp', { email, purpose }),
 
   getProfile: () =>
     api.get<AuthUser>('/auth/me'),

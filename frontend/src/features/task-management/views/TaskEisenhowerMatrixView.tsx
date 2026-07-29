@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Task, TaskPriority } from '../types';
 import { cn } from '@/lib/utils';
+import { dayjs } from '@/lib/date-utils';
 import { AlertTriangle, Clock, Calendar, Archive } from 'lucide-react';
 
 interface TaskEisenhowerMatrixViewProps {
@@ -56,9 +57,9 @@ export const TaskEisenhowerMatrixView: React.FC<TaskEisenhowerMatrixViewProps> =
   onShowMore,
 }) => {
   const isUrgent = (task: Task) => {
-    const dueDate = new Date(task.dueDate);
-    const today = new Date();
-    const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dueDate = dayjs(task.dueDate);
+    const today = dayjs();
+    const daysUntilDue = dueDate.diff(today, 'day');
     return daysUntilDue <= 3; // Urgent if due within 3 days
   };
 
@@ -94,9 +95,9 @@ export const TaskEisenhowerMatrixView: React.FC<TaskEisenhowerMatrixViewProps> =
   };
 
   const getDaysUntilDue = (task: Task) => {
-    const dueDate = new Date(task.dueDate);
-    const today = new Date();
-    const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dueDate = dayjs(task.dueDate);
+    const today = dayjs();
+    const daysUntilDue = dueDate.diff(today, 'day');
     
     if (daysUntilDue < 0) return `${Math.abs(daysUntilDue)} days overdue`;
     if (daysUntilDue === 0) return 'Due today';

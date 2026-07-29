@@ -23,16 +23,31 @@ export interface BadgeConfig {
 const ORANGE_TONE = 'bg-orange-500/15 text-orange-400 border-orange-500/25';
 
 export const STATUS_CONFIG: Record<TaskStatus, BadgeConfig> = {
-  Todo: { label: 'Todo', variant: 'secondary' },
-  InProgress: { label: 'In Progress', variant: 'info' },
-  Blocked: { label: 'Blocked', variant: 'destructive' },
-  Review: { label: 'Review', variant: 'warning' },
+  Draft: { label: 'Draft', variant: 'outline', className: 'bg-gray-500/15 text-gray-400 border-gray-500/25' },
+  Todo: { label: 'To Do', variant: 'info' },
+  InProgress: { label: 'In Progress', variant: 'warning', className: 'bg-orange-500/15 text-orange-400 border-orange-500/25' },
+  OnHold: { label: 'On Hold', variant: 'secondary', className: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25' },
   Completed: { label: 'Completed', variant: 'success' },
-  Verified: { label: 'Verified', variant: 'success', className: 'bg-green-500/15 text-green-400 border-green-500/25' },
-  Rejected: { label: 'Rejected', variant: 'destructive' },
-  Closed: { label: 'Closed', variant: 'outline' },
-  Cancelled: { label: 'Cancelled', variant: 'outline' },
-  Reopened: { label: 'Reopened', variant: 'outline', className: ORANGE_TONE },
+  Archived: { label: 'Archived', variant: 'outline', className: 'bg-gray-600/15 text-gray-400 border-gray-600/25' },
+  Cancelled: { label: 'Cancelled', variant: 'destructive' },
+};
+
+export const STATUS_LABELS: Record<TaskStatus, string> = Object.fromEntries(
+  Object.entries(STATUS_CONFIG).map(([key, config]) => [key, config.label]),
+) as Record<TaskStatus, string>;
+
+export const STATUS_VARIANT: Record<TaskStatus, BadgeVariant> = Object.fromEntries(
+  Object.entries(STATUS_CONFIG).map(([key, config]) => [key, config.variant]),
+) as Record<TaskStatus, BadgeVariant>;
+
+export const STATUS_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
+  Draft: ['Todo', 'Cancelled'],
+  Todo: ['InProgress', 'Cancelled'],
+  InProgress: ['OnHold', 'Completed', 'Cancelled'],
+  OnHold: ['InProgress', 'Cancelled'],
+  Completed: ['Archived', 'Cancelled'],
+  Archived: [],
+  Cancelled: [],
 };
 
 // Priority colours follow the frozen architecture: Urgent=red, High=orange,
@@ -44,6 +59,10 @@ export const PRIORITY_CONFIG: Record<TaskPriority, BadgeConfig> = {
   High: { label: 'High', variant: 'outline', className: ORANGE_TONE },
   Urgent: { label: 'Urgent', variant: 'destructive' },
 };
+
+export const PRIORITY_VARIANT: Record<TaskPriority, BadgeVariant> = Object.fromEntries(
+  Object.entries(PRIORITY_CONFIG).map(([key, config]) => [key, config.variant]),
+) as Record<TaskPriority, BadgeVariant>;
 
 export const RELATIONSHIP_LABELS: Record<string, string> = {
   'Depends On': 'Depends On',

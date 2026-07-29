@@ -82,7 +82,7 @@ export const TaskDashboard: React.FC<TaskDashboardProps> = ({
              task.status !== 'Completed';
     });
 
-    const pendingReview = myTasks.filter(task => task.status === 'Review');
+    const pendingReview = myTasks.filter(task => task.status === ('Review' as TaskStatus));
     const completedToday = myTasks.filter(task => {
       const completedAt = task.completedAt ? new Date(task.completedAt) : null;
       if (!completedAt) return false;
@@ -90,7 +90,7 @@ export const TaskDashboard: React.FC<TaskDashboardProps> = ({
       return completedAt.getTime() === today.getTime();
     });
 
-    const blocked = myTasks.filter(task => task.status === 'Blocked');
+    const blocked = myTasks.filter(task => task.status === 'OnHold');
     const cancelled = myTasks.filter(task => task.status === 'Cancelled');
 
     const recentlyUpdated = [...myTasks]
@@ -149,19 +149,9 @@ export const TaskDashboard: React.FC<TaskDashboardProps> = ({
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'Todo':
         return 'bg-gray-100 text-gray-800 border-gray-300';
-      case 'Blocked':
+      case 'OnHold':
         return 'bg-red-100 text-red-800 border-red-300';
-      case 'Review':
-        return 'bg-purple-100 text-purple-800 border-purple-300';
       case 'Cancelled':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-      case 'Reopened':
-        return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'Verified':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'Rejected':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'Closed':
         return 'bg-gray-100 text-gray-800 border-gray-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
@@ -461,7 +451,7 @@ export const TaskDashboard: React.FC<TaskDashboardProps> = ({
           {/* Today's Tasks Summary */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-semibold">Today's Summary</CardTitle>
+              <CardTitle className="text-base font-semibold">Today&apos;s Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">

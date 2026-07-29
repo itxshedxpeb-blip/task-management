@@ -6,12 +6,12 @@ import { CreateTemplateDto } from './dto/create-template.dto';
 export class TemplateService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(organizationId: string, query: { page?: number; pageSize?: number; search?: string }) {
+  async findAll(query: { page?: number; pageSize?: number; search?: string }) {
     const { page = 1, pageSize = 25, search } = query;
     const skip = (page - 1) * pageSize;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { organizationId };
+    const where: any = {};
     if (search && search.length >= 2) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -42,18 +42,15 @@ export class TemplateService {
     };
   }
 
-  async findById(id: string, organizationId: string) {
-    const template = await this.prisma.taskTemplate.findFirst({
-      where: { id, organizationId },
-    });
+  async findById(id: string) {
+    const template = await this.prisma.taskTemplate.findFirst({ where: { id } });
     if (!template) throw new NotFoundException('Template not found');
     return template;
   }
 
-  async create(dto: CreateTemplateDto, organizationId: string, userId: string) {
+  async create(dto: CreateTemplateDto, userId: string) {
     return this.prisma.taskTemplate.create({
       data: {
-        organizationId,
         name: dto.name,
         description: dto.description,
         defaults: dto.defaults,
@@ -62,9 +59,8 @@ export class TemplateService {
     });
   }
 
-  async update(id: string, dto: Partial<CreateTemplateDto>, organizationId: string) {
-    const template = await this.findById(id, organizationId);
-
+  async update(id: string, dto: Partial<CreateTemplateDto>) {
+    await this.findById(id);
     return this.prisma.taskTemplate.update({
       where: { id },
       data: {
@@ -75,19 +71,17 @@ export class TemplateService {
     });
   }
 
-  async delete(id: string, organizationId: string) {
-    await this.findById(id, organizationId);
+  async delete(id: string) {
+    await this.findById(id);
     return this.prisma.taskTemplate.delete({ where: { id } });
   }
 
-  async apply(id: string, organizationId: string, userId: string, userName: string) {
-    const template = await this.findById(id, organizationId);
-
+  async apply(id: string, userId: string, userName: string) {
+    const template = await this.findById(id);
     const defaults = template.defaults as Record<string, any>;
 
     const task = await this.prisma.task.create({
       data: {
-        organizationId,
         title: defaults.title || `${template.name} - New Task`,
         description: defaults.description,
         assignedUserId: defaults.assignedUserId,
@@ -99,7 +93,6 @@ export class TemplateService {
         priority: defaults.priority || 'Medium',
         status: defaults.status || 'Todo',
         category: defaults.category,
-        incentiveValue: defaults.incentiveValue || 0,
         estimatedHours: defaults.estimatedHours,
         tags: defaults.tags || [],
         notes: defaults.notes,

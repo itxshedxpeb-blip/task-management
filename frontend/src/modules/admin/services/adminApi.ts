@@ -1,38 +1,56 @@
 import { api } from '@/core/api';
 
+interface BackendResponse<T> {
+  message?: string;
+  data: T;
+}
+
+interface PaginatedResponse<T> {
+  rows: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+}
+
 export const adminApi = {
   login: (data: { email: string; password: string }) =>
-    api.post('/admin/auth/login', data),
+    api.post<BackendResponse<{ accessToken: string; sessionId: string; user: any }>>('/auth/login', data),
+
   getDashboardStats: () =>
-    api.get('/admin/dashboard/stats'),
-  getCompanies: (params?: any) =>
-    api.get('/admin/companies', { params }),
-  createCompany: (data: any) =>
-    api.post('/admin/companies', data),
-  updateCompany: (id: string, data: any) =>
-    api.patch(`/admin/companies/${id}`, data),
-  deleteCompany: (id: string) =>
-    api.delete(`/admin/companies/${id}`),
-  suspendCompany: (id: string) =>
-    api.patch(`/admin/companies/${id}/suspend`),
-  getUsers: (params?: any) =>
-    api.get('/admin/users', { params }),
-  createUser: (data: any) =>
-    api.post('/admin/users', data),
-  updateUser: (id: string, data: any) =>
-    api.patch(`/admin/users/${id}`, data),
-  deleteUser: (id: string) =>
-    api.delete(`/admin/users/${id}`),
-  getAuditLogs: (params?: any) =>
-    api.get('/admin/audit-logs', { params }),
-  getOrganizations: (params?: any) =>
-    api.get('/admin/organizations', { params }),
-  getPlans: (params?: any) =>
-    api.get('/admin/plans', { params }),
-  getAnalytics: () =>
-    api.get('/admin/analytics'),
+    api.get<BackendResponse<any>>('/admin/dashboard/stats'),
+
+  getEmployees: (params?: any) =>
+    api.get<BackendResponse<PaginatedResponse<any>>>('/admin/users', { params }),
+
+  getEmployeeById: (id: string) =>
+    api.get<BackendResponse<any>>(`/admin/users/${id}`),
+
+  createEmployee: (data: any) =>
+    api.post<BackendResponse<any>>('/admin/users', data),
+
+  updateEmployee: (id: string, data: any) =>
+    api.patch<BackendResponse<any>>(`/admin/users/${id}`, data),
+
+  deleteEmployee: (id: string) =>
+    api.delete<BackendResponse<void>>(`/admin/users/${id}`),
+
+  toggleEmployeeStatus: (id: string) =>
+    api.patch<BackendResponse<any>>(`/admin/users/${id}/toggle-status`),
+
+  getAllTasks: (params?: any) =>
+    api.get<BackendResponse<PaginatedResponse<any>>>('/tasks', { params }),
+
+  getReports: () =>
+    api.get<BackendResponse<any>>('/admin/reports'),
+
   getSystemSettings: () =>
-    api.get('/admin/settings'),
+    api.get<BackendResponse<any>>('/admin/settings'),
+
   updateSystemSettings: (data: any) =>
-    api.patch('/admin/settings', data),
+    api.patch<BackendResponse<any>>('/admin/settings', data),
 };

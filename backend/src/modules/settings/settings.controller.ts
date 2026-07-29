@@ -7,7 +7,6 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('settings')
 @ApiBearerAuth()
@@ -15,64 +14,26 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
-  @Get('company')
+  @Get()
   @RequirePermissions('settings:read')
-  @ApiOperation({ summary: 'Get current org settings' })
-  async getCompanySettings(
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.settingsService.getCompanySettings(organizationId);
-    return { message: 'Company settings fetched.', data };
+  @ApiOperation({ summary: 'Get system settings' })
+  async getSettings() {
+    const data = await this.settingsService.getSystemSettings();
+    return { message: 'Settings fetched.', data };
   }
 
-  @Patch('company')
+  @Patch()
   @RequirePermissions('settings:update')
-  @ApiOperation({ summary: 'Update org settings' })
-  async updateCompanySettings(
-    @CurrentUser('organizationId') organizationId: string,
+  @ApiOperation({ summary: 'Update system settings' })
+  async updateSettings(
     @Body() body: {
-      name?: string;
-      email?: string;
-      mobile?: string;
-      address?: string;
-      city?: string;
-      state?: string;
-      country?: string;
-      pincode?: string;
-      gstNumber?: string;
-      panNumber?: string;
+      companyName?: string;
+      supportEmail?: string;
       website?: string;
-      logo?: string;
-      settings?: Record<string, any>;
+      primaryColor?: string;
     },
   ) {
-    const data = await this.settingsService.updateCompanySettings(organizationId, body);
-    return { message: 'Company settings updated.', data };
-  }
-
-  @Get('system-prefs')
-  @RequirePermissions('settings:read')
-  @ApiOperation({ summary: 'Get system preferences' })
-  async getSystemPrefs(
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.settingsService.getSystemPrefs(organizationId);
-    return { message: 'System preferences fetched.', data };
-  }
-
-  @Patch('system-prefs')
-  @RequirePermissions('settings:update')
-  @ApiOperation({ summary: 'Update system preferences' })
-  async updateSystemPrefs(
-    @CurrentUser('organizationId') organizationId: string,
-    @Body() body: {
-      settings?: Record<string, any>;
-      maxUsers?: number;
-      maxStorageGb?: number;
-      subscriptionTier?: string;
-    },
-  ) {
-    const data = await this.settingsService.updateSystemPrefs(organizationId, body);
-    return { message: 'System preferences updated.', data };
+    const data = await this.settingsService.updateSystemSettings(body);
+    return { message: 'Settings updated.', data };
   }
 }

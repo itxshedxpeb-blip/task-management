@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Send, Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/date-utils';
 import { Comment } from '../types';
 
 interface TaskCommentsProps {
@@ -109,7 +110,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({
                       </Badge>
                     )}
                     <span className="text-[10px] text-muted-foreground">
-                      {comment.createdAt.toLocaleString()}
+                      {formatDateTime(comment.createdAt)}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground break-words">

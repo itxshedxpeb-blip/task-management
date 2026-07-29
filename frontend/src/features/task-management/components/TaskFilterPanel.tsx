@@ -45,8 +45,8 @@ export interface TaskFilters {
   tags?: string[];
 }
 
-const STATUSES: TaskStatus[] = ['Pending', 'In Progress', 'Blocked', 'Review', 'Completed', 'Cancelled', 'Reopened'];
-const PRIORITIES: TaskPriority[] = ['Low', 'Medium', 'High', 'Critical'];
+const STATUSES: TaskStatus[] = ['Draft', 'Todo', 'InProgress', 'OnHold', 'Completed', 'Archived', 'Cancelled'];
+const PRIORITIES: TaskPriority[] = ['None', 'Low', 'Medium', 'High', 'Urgent'];
 const CATEGORIES: TaskCategory[] = ['General', 'Office', 'Field Work', 'Maintenance', 'Installation', 'Inspection', 'Documentation', 'Meeting', 'Training', 'Other'];
 const MODULES: LinkedModule[] = ['General'];
 

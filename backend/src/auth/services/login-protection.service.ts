@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const LOCKOUT_THRESHOLD = 7;
-const LOCKOUT_DURATIONS = [10 * 60 * 1000, 30 * 60 * 1000, 60 * 60 * 1000]; // 10min, 30min, 1hr
+const LOCKOUT_DURATIONS = [10 * 60 * 1000, 30 * 60 * 1000, 60 * 60 * 1000];
 
 @Injectable()
 export class LoginProtectionService {
@@ -12,7 +12,6 @@ export class LoginProtectionService {
 
   async recordAttempt(params: {
     email: string;
-    organizationId?: string;
     ipAddress?: string;
     userAgent?: string;
     success: boolean;
@@ -54,7 +53,6 @@ export class LoginProtectionService {
         await this.prisma.loginAttempt.create({
           data: {
             email: params.email,
-            organizationId: params.organizationId,
             ipAddress: params.ipAddress,
             success: false,
             failureReason: `Account locked for ${duration / 60000} minutes (${recentFailures} failures)`,

@@ -22,10 +22,10 @@ function buildItems(stats?: TaskStats): SummaryItem[] {
   const byStatus = stats?.tasksByStatus;
   return [
     { label: 'Assigned', value: stats?.totalTasks ?? 0, tone: 'text-foreground' },
-    { label: 'In Progress', value: byStatus?.['In Progress'] ?? stats?.inProgressTasks ?? 0, tone: 'text-blue-500' },
-    { label: 'Review', value: byStatus?.['Review'] ?? 0, tone: 'text-amber-500' },
+    { label: 'In Progress', value: byStatus?.['InProgress'] ?? stats?.inProgressTasks ?? 0, tone: 'text-blue-500' },
+    { label: 'On Hold', value: byStatus?.['OnHold'] ?? 0, tone: 'text-red-500' },
     { label: 'Completed', value: byStatus?.['Completed'] ?? stats?.completedTasks ?? 0, tone: 'text-green-500' },
-    { label: 'Blocked', value: byStatus?.['Blocked'] ?? 0, tone: 'text-red-500' },
+    { label: 'Cancelled', value: byStatus?.['Cancelled'] ?? 0, tone: 'text-gray-500' },
   ];
 }
 

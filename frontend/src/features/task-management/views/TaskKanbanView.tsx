@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Task, TaskStatus } from '../types';
 import { cn } from '@/lib/utils';
-import { Clock, AlertCircle, CheckCircle, XCircle, RotateCcw, Edit, Camera } from 'lucide-react';
+import { formatDate } from '@/lib/date-utils';
+import { Clock, AlertCircle, CheckCircle, XCircle, Edit, Camera } from 'lucide-react';
 
 interface TaskKanbanViewProps {
   tasks: Task[];
@@ -17,13 +18,11 @@ interface TaskKanbanViewProps {
 }
 
 const COLUMNS: { status: TaskStatus; label: string; icon: React.ReactNode; color: string }[] = [
+  { status: 'Draft', label: 'Draft', icon: <Clock className="h-4 w-4" />, color: 'border-l-gray-400' },
   { status: 'Todo', label: 'Todo', icon: <Clock className="h-4 w-4" />, color: 'border-l-blue-500' },
-  { status: 'InProgress', label: 'In Progress', icon: <RotateCcw className="h-4 w-4" />, color: 'border-l-yellow-500' },
-  { status: 'Blocked', label: 'Blocked', icon: <AlertCircle className="h-4 w-4" />, color: 'border-l-red-500' },
-  { status: 'Review', label: 'Review', icon: <Clock className="h-4 w-4" />, color: 'border-l-orange-500' },
+  { status: 'InProgress', label: 'In Progress', icon: <AlertCircle className="h-4 w-4" />, color: 'border-l-yellow-500' },
+  { status: 'OnHold', label: 'On Hold', icon: <AlertCircle className="h-4 w-4" />, color: 'border-l-red-500' },
   { status: 'Completed', label: 'Completed', icon: <CheckCircle className="h-4 w-4" />, color: 'border-l-green-500' },
-  { status: 'Verified', label: 'Verified', icon: <CheckCircle className="h-4 w-4" />, color: 'border-l-green-600' },
-  { status: 'Cancelled', label: 'Cancelled', icon: <XCircle className="h-4 w-4" />, color: 'border-l-gray-500' },
 ];
 
 export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
@@ -154,7 +153,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
                             <span className="truncate">{task.assignedUserName}</span>
                             {task.dueDate && (
                               <span className="whitespace-nowrap">
-                                {new Date(task.dueDate).toLocaleDateString()}
+                                {formatDate(task.dueDate)}
                               </span>
                             )}
                           </div>

@@ -1,37 +1,17 @@
 /**
- * Fresh-install system seed (no demo CRM data).
- * Ensures every organization has roles, pipelines, and event rules.
+ * Fresh-install system seed.
+ * Ensures system roles exist.
  *
  * Usage: npm run seed:system
  */
-import { PrismaClient } from '@prisma/client';
-import { bootstrapOrganizationSystem } from '../src/common/system-bootstrap';
+import { PrismaClient } from '../src/prisma/client';
+import { bootstrapSystem } from '../src/common/system-bootstrap';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const orgs = await prisma.organization.findMany({
-    where: { isDeleted: false },
-    select: { id: true, name: true },
-  });
-
-  if (!orgs.length) {
-    console.log('No organizations found. Register an account first, then run seed:system.');
-    return;
-  }
-
-  for (const org of orgs) {
-    const owner = await prisma.user.findFirst({
-      where: { organizationId: org.id, role: 'OWNER' },
-      select: { id: true },
-    });
-    const result = await bootstrapOrganizationSystem(prisma, org.id, owner?.id);
-    console.log(
-      `✓ ${org.name}: roles upserted, pipelines=${result.pipelineCount}, eventRules=${result.ruleCount}`,
-    );
-  }
-
-  console.log(`\nSystem seed complete for ${orgs.length} organization(s).`);
+  const result = await bootstrapSystem(prisma);
+  console.log(`✓ System seed complete: roles upserted`);
 }
 
 main()

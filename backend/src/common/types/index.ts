@@ -17,6 +17,5 @@ export interface CurrentUser {
   email: string;
   name?: string;
   role: string;
-  organizationId?: string;
-  organizationType?: string;
+  userType?: string;
 }

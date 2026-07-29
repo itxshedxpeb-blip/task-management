@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDate, formatDateTime } from '@/lib/date-utils';
 import { Task } from '../types';
 import { ActivityTimeline } from './ActivityTimeline';
 import { TaskChecklist } from './TaskChecklist';
@@ -93,39 +94,36 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
     };
   }, [trackingInterval]);
 
-  // Create object URLs for image preview - temporary for display only
-  const [beforeUrls, setBeforeUrls] = useState<string[]>([]);
-  const [afterUrls, setAfterUrls] = useState<string[]>([]);
+  const beforeUrls = useMemo(
+    () => task.completionProof?.beforeImages?.map(file => URL.createObjectURL(file)) || [],
+    [task.completionProof?.beforeImages]
+  );
+  const afterUrls = useMemo(
+    () => task.completionProof?.afterImages?.map(file => URL.createObjectURL(file)) || [],
+    [task.completionProof?.afterImages]
+  );
 
   useEffect(() => {
-    // Convert File[] to object URLs for preview
-    const newBeforeUrls = task.completionProof?.beforeImages?.map(file => URL.createObjectURL(file)) || [];
-    const newAfterUrls = task.completionProof?.afterImages?.map(file => URL.createObjectURL(file)) || [];
-    
-    setBeforeUrls(newBeforeUrls);
-    setAfterUrls(newAfterUrls);
-
-    // Cleanup on unmount
     return () => {
-      newBeforeUrls.forEach(url => URL.revokeObjectURL(url));
-      newAfterUrls.forEach(url => URL.revokeObjectURL(url));
+      beforeUrls.forEach(url => URL.revokeObjectURL(url));
+      afterUrls.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [task.completionProof?.beforeImages, task.completionProof?.afterImages]);
+  }, [beforeUrls, afterUrls]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Completed':
         return 'text-green-600 bg-green-50 border-green-200';
-      case 'In Progress':
+      case 'InProgress':
         return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'Blocked':
+      case 'OnHold':
         return 'text-red-600 bg-red-50 border-red-200';
-      case 'Review':
-        return 'text-orange-600 bg-orange-50 border-orange-200';
       case 'Cancelled':
         return 'text-gray-600 bg-gray-50 border-gray-200';
-      case 'Reopened':
-        return 'text-purple-600 bg-purple-50 border-purple-200';
+      case 'Draft':
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'Archived':
+        return 'text-gray-600 bg-gray-50 border-gray-200';
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
     }
@@ -253,7 +251,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                 <span>Due Date</span>
               </div>
               <p className="text-sm font-medium">
-                {new Date(task.dueDate).toLocaleDateString()}
+                {formatDate(task.dueDate)}
               </p>
             </div>
 
@@ -265,7 +263,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                   <span>Start Date</span>
                 </div>
                 <p className="text-sm font-medium">
-                  {new Date(task.startDate).toLocaleDateString()}
+                  {formatDate(task.startDate)}
                 </p>
               </div>
             )}
@@ -473,7 +471,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                   <div className="flex-1">
                     <p className="text-sm font-medium">Task Assigned</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(task.createdAt).toLocaleString()}
+                      {formatDateTime(task.createdAt)}
                     </p>
                   </div>
                 </div>
@@ -484,7 +482,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                     <div className="flex-1">
                       <p className="text-sm font-medium">Task Completed</p>
                       <p className="text-xs text-muted-foreground">
-                        {task.completedAt && new Date(task.completedAt).toLocaleString()}
+                        {formatDateTime(task.completedAt)}
                       </p>
                     </div>
                   </div>
@@ -496,7 +494,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                     <div className="flex-1">
                       <p className="text-sm font-medium">Task Verified</p>
                       <p className="text-xs text-muted-foreground">
-                        {task.verifiedAt && new Date(task.verifiedAt).toLocaleString()}
+                        {formatDateTime(task.verifiedAt)}
                       </p>
                     </div>
                   </div>
@@ -522,13 +520,13 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                   <div>
                     <p className="text-xs text-muted-foreground">Completed At</p>
                     <p className="text-sm font-medium">
-                      {task.completedAt ? new Date(task.completedAt).toLocaleString() : '-'}
+                      {formatDateTime(task.completedAt) || '-'}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Uploaded At</p>
                     <p className="text-sm font-medium">
-                      {task.completionProof.uploadedAt ? new Date(task.completionProof.uploadedAt).toLocaleString() : '-'}
+                      {formatDateTime(task.completionProof.uploadedAt) || '-'}
                     </p>
                   </div>
                 </div>
@@ -560,7 +558,7 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                   <div>
                     <p className="text-xs text-muted-foreground">Verified At</p>
                     <p className="text-sm font-medium">
-                      {task.verifiedAt ? new Date(task.verifiedAt).toLocaleString() : '-'}
+                      {formatDateTime(task.verifiedAt) || '-'}
                     </p>
                   </div>
                 </div>
@@ -603,13 +601,13 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                 <div>
                   <p className="text-xs text-muted-foreground">Created At</p>
                   <p className="font-medium">
-                    {new Date(task.createdAt).toLocaleString()}
+                    {formatDateTime(task.createdAt)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Updated At</p>
                   <p className="font-medium">
-                    {new Date(task.updatedAt).toLocaleString()}
+                    {formatDateTime(task.updatedAt)}
                   </p>
                 </div>
                 <div>

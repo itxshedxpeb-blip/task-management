@@ -64,12 +64,6 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Type(() => Number)
-  incentiveValue?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
   @Max(100)
   @Type(() => Number)
   progress?: number;

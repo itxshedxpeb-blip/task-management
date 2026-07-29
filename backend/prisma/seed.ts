@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../src/prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -15,8 +15,8 @@ const taskTitles = [
   'Add role-based access', 'Create backup system', 'Optimize image processing',
 ];
 
-const priorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
-const statuses = ['TODO', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'] as const;
+const priorities = ['Low', 'Medium', 'High', 'Urgent'] as const;
+const statuses = ['Draft', 'Todo', 'InProgress', 'OnHold', 'Completed', 'Archived'] as const;
 
 function randomItem<T>(array: readonly T[]): T {
   return array[Math.floor(Math.random() * array.length)];
@@ -39,19 +39,19 @@ async function main() {
   console.log(`Seeding ${count} tasks...`);
 
   const seedUser = await prisma.user.findFirst({
-    where: { organizationId: { not: null } },
+    where: { isActive: true },
     orderBy: { createdAt: 'asc' },
   });
 
-  if (!seedUser?.organizationId) {
-    console.error('No organization user found. Register an account first, then run seed.');
+  if (!seedUser) {
+    console.error('No users found. Register an account first, then run seed.');
     process.exit(1);
   }
 
-  const organizationId = seedUser.organizationId;
   const createdById = seedUser.id;
+  const createdByName = seedUser.name;
 
-  await prisma.task.deleteMany({ where: { organizationId } });
+  await prisma.task.deleteMany({});
   console.log('Cleared existing tasks');
 
   const tasks: any[] = [];
@@ -62,9 +62,10 @@ async function main() {
       description: `Task description for item ${i + 1}`,
       status: randomItem(statuses),
       priority: randomItem(priorities),
-      organizationId,
       createdById,
+      createdByName,
       assignedUserId: Math.random() > 0.3 ? createdById : null,
+      assignedUserName: Math.random() > 0.3 ? createdByName : null,
       dueDate: randomDate(new Date(), new Date('2026-12-31')),
       createdAt,
       updatedAt: createdAt,
@@ -74,8 +75,8 @@ async function main() {
   await prisma.task.createMany({ data: tasks });
   console.log(`Seeded ${tasks.length} tasks`);
 
-  const total = await prisma.task.count({ where: { organizationId } });
-  console.log(`\nTotal tasks in org: ${total}`);
+  const total = await prisma.task.count();
+  console.log(`\nTotal tasks: ${total}`);
 }
 
 main()

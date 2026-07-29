@@ -15,51 +15,50 @@ import {
   Tag,
   RefreshCw,
   Send,
-  Plus,
   Circle,
-  CheckCircle,
-  Trash2,
-  Edit,
-  Eye,
   XCircle,
   Timer,
   BarChart3,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { formatDate, formatDateTime } from '@/lib/date-utils';
 import {
   useTaskDetail,
   useUpdateTask,
   useAddComment,
   useToggleChecklistItem,
+  useDeleteTask,
 } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
-import type { TaskStatus, TaskPriority, Task, ChecklistItem, Comment, TaskActivity } from '@/features/task-management/types';
+import type { TaskStatus, Task, ChecklistItem, Comment, TaskActivity } from '@/features/task-management/types';
 
 const PRIORITY_VARIANT: Record<string, 'destructive' | 'warning' | 'info' | 'secondary'> = {
-  Critical: 'destructive',
+  Urgent: 'destructive',
   High: 'warning',
   Medium: 'info',
   Low: 'secondary',
+  None: 'secondary',
 };
 
 const STATUS_VARIANT: Record<string, 'destructive' | 'warning' | 'info' | 'success' | 'secondary'> = {
-  'Pending': 'secondary',
-  'In Progress': 'info',
-  'Review': 'warning',
+  'Draft': 'secondary',
+  'Todo': 'secondary',
+  'InProgress': 'info',
+  'OnHold': 'warning',
   'Completed': 'success',
-  'Blocked': 'destructive',
-  'Cancelled': 'secondary',
-  'Reopened': 'warning',
+  'Archived': 'secondary',
+  'Cancelled': 'destructive',
 };
 
-const STATUS_FLOW: TaskStatus[] = ['Pending', 'In Progress', 'Blocked', 'Review', 'Completed', 'Cancelled'];
+const STATUS_FLOW: TaskStatus[] = ['Draft', 'Todo', 'InProgress', 'OnHold', 'Completed'];
 
 function DetailSkeleton() {
   return (
@@ -72,7 +71,6 @@ function DetailSkeleton() {
           <Skeleton className="h-48 w-full" />
         </div>
         <div className="space-y-4">
-          <Skeleton className="h-32 w-full" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-32 w-full" />
         </div>
@@ -96,7 +94,7 @@ function CommentSection({ task }: { task: Task }) {
   const comments: Comment[] = task.comments || [];
 
   return (
-    <Card className="hover-translate-none">
+    <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <MessageSquare className="h-4 w-4" />
@@ -124,7 +122,7 @@ function CommentSection({ task }: { task: Task }) {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-foreground">{comment.userName}</span>
                   <span className="text-[10px] text-muted-foreground">
-                    {new Date(comment.createdAt).toLocaleDateString()}
+                    {formatDate(comment.createdAt)}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">{comment.text}</p>
@@ -152,7 +150,7 @@ function ChecklistSection({ task }: { task: Task }) {
   };
 
   return (
-    <Card className="hover-translate-none">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
@@ -163,10 +161,7 @@ function ChecklistSection({ task }: { task: Task }) {
         </div>
         {checklist.length > 0 && (
           <div className="w-full h-1.5 bg-muted rounded-full mt-2 overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
-            />
+            <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${progressPct}%` }} />
           </div>
         )}
       </CardHeader>
@@ -175,109 +170,11 @@ function ChecklistSection({ task }: { task: Task }) {
           <p className="text-sm text-muted-foreground text-center py-4">No checklist items.</p>
         ) : (
           <div className="space-y-1">
-            {checklist
-              .sort((a, b) => a.order - b.order)
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors"
-                >
-                  <Checkbox
-                    checked={item.completed}
-                    onCheckedChange={() => handleToggle(item)}
-                  />
-                  <span
-                    className={cn(
-                      'text-sm transition-all',
-                      item.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-                    )}
-                  >
-                    {item.text}
-                  </span>
-                </div>
-              ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ActivityTimeline({ task }: { task: Task }) {
-  const activities: TaskActivity[] = task.activityHistory || [];
-
-  if (activities.length === 0) {
-    return (
-      <Card className="hover-translate-none">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Activity Timeline
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-4">No activity recorded.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="hover-translate-none">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          Activity Timeline ({activities.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="relative">
-          <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
-          <div className="space-y-4">
-            {activities.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 relative">
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 z-10">
-                  <Circle className="h-2 w-2 fill-primary text-primary" />
-                </div>
-                <div className="min-w-0 pt-0.5">
-                  <p className="text-sm text-foreground">{activity.description}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {activity.performedByName} · {new Date(activity.timestamp).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function AttachmentsSection({ task }: { task: Task }) {
-  const attachments = task.attachments || [];
-
-  return (
-    <Card className="hover-translate-none">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Paperclip className="h-4 w-4" />
-          Attachments ({attachments.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {attachments.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No attachments.</p>
-        ) : (
-          <div className="space-y-2">
-            {attachments.map((att) => (
-              <div key={att.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-foreground truncate">{att.fileName}</span>
-                </div>
-                <span className="text-[10px] text-muted-foreground shrink-0 ml-2">
-                  {(att.fileSize / 1024).toFixed(0)}KB
+            {checklist.sort((a, b) => a.order - b.order).map((item) => (
+              <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+                <Checkbox checked={item.completed} onCheckedChange={() => handleToggle(item)} />
+                <span className={cn('text-sm transition-all', item.completed ? 'line-through text-muted-foreground' : 'text-foreground')}>
+                  {item.text}
                 </span>
               </div>
             ))}
@@ -288,33 +185,69 @@ function AttachmentsSection({ task }: { task: Task }) {
   );
 }
 
+function ActivityTimeline({ task }: { task: Task }) {
+  const activities: TaskActivity[] = task.activityHistory || [];
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Clock className="h-4 w-4" />
+          Activity Timeline ({activities.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {activities.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">No activity recorded.</p>
+        ) : (
+          <div className="relative">
+            <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
+            <div className="space-y-4">
+              {activities.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-3 relative">
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 z-10">
+                    <Circle className="h-2 w-2 fill-primary text-primary" />
+                  </div>
+                  <div className="min-w-0 pt-0.5">
+                    <p className="text-sm text-foreground">{activity.description}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {activity.performedByName} · {formatDateTime(activity.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const taskId = params.id as string;
+  const taskId = params?.id as string;
   const { user } = useAuth();
   const { data: task, isLoading, error, refetch } = useTaskDetail(taskId);
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
+  const [showDelete, setShowDelete] = useState(false);
 
-  if (isLoading) {
-    return <DetailSkeleton />;
-  }
+  if (isLoading) return <DetailSkeleton />;
 
   if (error || !task) {
     return (
       <div className="space-y-6">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
-        <Card className="hover-translate-none">
+        <Card>
           <CardContent className="p-12 text-center">
             <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
-            <p className="text-foreground font-medium mb-1">Failed to load task</p>
-            <p className="text-sm text-muted-foreground mb-4">The task may not exist or you may lack access.</p>
-            <Button onClick={() => refetch()} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
+            <p className="font-medium mb-1">Failed to load task</p>
+            <Button onClick={() => refetch()} variant="outline" size="sm" className="mt-3">
+              <RefreshCw className="h-4 w-4 mr-2" /> Retry
             </Button>
           </CardContent>
         </Card>
@@ -328,44 +261,39 @@ export default function TaskDetailPage() {
     await updateTask.mutateAsync({ id: task.id, data: { status: newStatus } });
   };
 
+  const handleDelete = async () => {
+    await deleteTask.mutateAsync(task.id);
+    router.push('/app/tasks');
+  };
+
   return (
     <div className="space-y-6">
-      {/* Back + Title */}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back
           </Button>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-foreground">{task.title}</h1>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">{task.taskId}</p>
+          <p className="text-xs text-muted-foreground font-mono">TSK-{String(task.taskId).padStart(3, '0')}</p>
         </div>
         <div className="flex items-center gap-2">
-          {task.status !== 'Completed' && task.status !== 'Cancelled' && (
+          <Button variant="destructive" size="sm" onClick={() => setShowDelete(true)}>
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+          </Button>
+          {task.status !== 'Completed' && task.status !== 'Cancelled' && task.status !== 'Archived' && (
             <>
-              {task.status === 'Review' ? (
+              {task.status === 'OnHold' ? (
                 <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleStatusChange('In Progress')}
-                    disabled={updateTask.isPending}
-                  >
-                    <XCircle className="h-3.5 w-3.5 mr-1.5" />
-                    Reject
+                  <Button size="sm" variant="outline" onClick={() => handleStatusChange('InProgress')} disabled={updateTask.isPending}>
+                    <XCircle className="h-3.5 w-3.5 mr-1.5" /> Resume
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleStatusChange('Completed')}
-                    disabled={updateTask.isPending}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                    Complete
+                  <Button size="sm" onClick={() => handleStatusChange('Completed')} disabled={updateTask.isPending}>
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Complete
                   </Button>
                 </>
-              ) : statusIndex < STATUS_FLOW.indexOf('Completed') ? (
+              ) : statusIndex >= 0 && statusIndex < STATUS_FLOW.indexOf('Completed') ? (
                 <Button
                   size="sm"
                   onClick={() => {
@@ -376,18 +304,24 @@ export default function TaskDetailPage() {
                 >
                   Move Forward
                 </Button>
-              ) : null}
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => handleStatusChange('InProgress')}
+                  disabled={updateTask.isPending}
+                >
+                  Start Task
+                </Button>
+              )}
             </>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
           {task.description && (
-            <Card className="hover-translate-none">
+            <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Description</CardTitle>
               </CardHeader>
@@ -400,13 +334,10 @@ export default function TaskDetailPage() {
           <ChecklistSection task={task} />
           <CommentSection task={task} />
           <ActivityTimeline task={task} />
-          <AttachmentsSection task={task} />
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-4">
-          {/* Status */}
-          <Card className="hover-translate-none">
+          <Card>
             <CardContent className="p-4 space-y-4">
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1.5">Status</p>
@@ -433,36 +364,35 @@ export default function TaskDetailPage() {
                 <p className="text-xs font-medium text-muted-foreground mb-1.5">Due Date</p>
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{new Date(task.dueDate).toLocaleDateString()}</span>
+                  <span className="text-sm text-foreground">
+                    {formatDate(task.dueDate)}
+                  </span>
                 </div>
               </div>
-              {task.startDate && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Start Date</p>
-                  <span className="text-sm text-foreground">{new Date(task.startDate).toLocaleDateString()}</span>
-                </div>
-              )}
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1.5">Progress</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${task.progress}%` }}
-                    />
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${task.progress}%` }} />
                   </div>
                   <span className="text-xs text-muted-foreground">{task.progress}%</span>
                 </div>
               </div>
+              {task.status === 'Completed' && task.completedAt && (
+                <>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Completed At</p>
+                    <span className="text-sm text-foreground">{formatDateTime(task.completedAt)}</span>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
-          {/* Time Tracking */}
-          <Card className="hover-translate-none">
+          <Card>
             <CardContent className="p-4 space-y-3">
               <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <Timer className="h-3.5 w-3.5" />
-                Time Tracking
+                <Timer className="h-3.5 w-3.5" /> Time Tracking
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -477,68 +407,57 @@ export default function TaskDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Labels */}
           {task.tags && task.tags.length > 0 && (
-            <Card className="hover-translate-none">
+            <Card>
               <CardContent className="p-4">
                 <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-2">
-                  <Tag className="h-3.5 w-3.5" />
-                  Labels
+                  <Tag className="h-3.5 w-3.5" /> Labels
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {task.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-[10px]">
-                      {tag}
-                    </Badge>
+                    <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>
                   ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Category */}
-          {task.category && (
-            <Card className="hover-translate-none">
-              <CardContent className="p-4">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Category</p>
-                <Badge variant="outline">{task.category}</Badge>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Timestamps */}
-          <Card className="hover-translate-none">
+          <Card>
             <CardContent className="p-4 space-y-2">
               <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <BarChart3 className="h-3.5 w-3.5" />
-                Details
+                <BarChart3 className="h-3.5 w-3.5" /> Details
               </p>
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-[10px] text-muted-foreground">Created</span>
-                  <span className="text-[10px] text-foreground">{new Date(task.createdAt).toLocaleString()}</span>
+                  <span className="text-[10px] text-foreground">{formatDateTime(task.createdAt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[10px] text-muted-foreground">Updated</span>
-                  <span className="text-[10px] text-foreground">{new Date(task.updatedAt).toLocaleString()}</span>
+                  <span className="text-[10px] text-foreground">{formatDateTime(task.updatedAt)}</span>
                 </div>
-                {task.completedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-muted-foreground">Completed</span>
-                    <span className="text-[10px] text-foreground">{new Date(task.completedAt).toLocaleString()}</span>
-                  </div>
-                )}
-                {task.verifiedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-muted-foreground">Verified</span>
-                    <span className="text-[10px] text-foreground">{new Date(task.verifiedAt).toLocaleString()}</span>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <Dialog open={showDelete} onOpenChange={setShowDelete}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{task.title}&quot;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDelete(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteTask.isPending}>
+              {deleteTask.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

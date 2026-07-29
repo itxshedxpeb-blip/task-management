@@ -13,20 +13,7 @@ import type { FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import {
-  ResetPasswordDto,
-  ResendOtpDto,
-  ChangePasswordDto,
-  ChangeEmailDto,
-  VerifyChangeEmailDto,
-  SendEmailVerificationDto,
-  VerifyEmailDto,
-  SendRegistrationOtpDto,
-  SendForgotPasswordOtpDto,
-  VerifyForgotPasswordOtpDto,
-} from './dto/auth-extended.dto';
+import { ChangePasswordDto } from './dto/auth-extended.dto';
 import { Public } from './decorators/public.decorator';
 import { CookieInterceptor } from './cookie.interceptor';
 
@@ -36,12 +23,10 @@ interface RequestWithUser extends FastifyRequest {
     email: string;
     name?: string;
     role: string;
-    organizationId?: string;
     sessionId: string;
   };
 }
 
-/** Stricter limit for credential / OTP endpoints (not session refresh). */
 const AUTH_STRICT = { default: { limit: 10, ttl: 60_000 } };
 
 @ApiTags('auth')
@@ -50,43 +35,16 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   private refreshFromCookie(req: FastifyRequest): string | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return req.cookies?.refreshToken || (req as any).cookies?.['refreshToken'];
   }
 
   @Public()
   @Throttle(AUTH_STRICT)
   @Post('register')
+  @UseInterceptors(CookieInterceptor)
   @ApiOperation({ summary: 'Register a new account' })
   register(@Body() dto: RegisterDto, @Req() req: FastifyRequest) {
     return this.authService.register(dto, req.requestId);
-  }
-
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('send-registration-otp')
-  @ApiOperation({ summary: 'Send registration OTP' })
-  sendRegistrationOtp(@Body() dto: SendRegistrationOtpDto, @Req() req: FastifyRequest) {
-    return this.authService.sendRegistrationOtp(dto, req.requestId);
-  }
-
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('verify-registration-otp')
-  @UseInterceptors(CookieInterceptor)
-  @ApiOperation({ summary: 'Verify registration OTP' })
-  verifyRegistrationOtp(@Body() dto: VerifyOtpDto, @Req() req: FastifyRequest) {
-    return this.authService.verifyRegistrationOtp(dto, req.ip, req.headers['user-agent'] as string);
-  }
-
-  /** Legacy alias */
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('verify-otp')
-  @UseInterceptors(CookieInterceptor)
-  @ApiOperation({ summary: 'Verify registration OTP (legacy alias)' })
-  verifyOtp(@Body() dto: VerifyOtpDto, @Req() req: FastifyRequest) {
-    return this.authService.verifyOtp(dto, req.ip, req.headers['user-agent'] as string);
   }
 
   @Public()
@@ -140,61 +98,6 @@ export class AuthController {
     return { message: 'All sessions have been revoked.', clearRefreshCookie: true };
   }
 
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('send-forgot-password-otp')
-  @ApiOperation({ summary: 'Send forgot-password OTP' })
-  sendForgotPasswordOtp(@Body() dto: SendForgotPasswordOtpDto, @Req() req: FastifyRequest) {
-    return this.authService.sendForgotPasswordOtp(dto, req.requestId);
-  }
-
-  /** Legacy alias */
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('forgot-password')
-  @ApiOperation({ summary: 'Request password reset OTP (legacy alias)' })
-  forgotPassword(@Body() dto: ForgotPasswordDto, @Req() req: FastifyRequest) {
-    return this.authService.forgotPassword(dto, req.requestId);
-  }
-
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('verify-forgot-password-otp')
-  @ApiOperation({ summary: 'Verify forgot-password OTP' })
-  verifyForgotPasswordOtp(@Body() dto: VerifyForgotPasswordOtpDto) {
-    return this.authService.verifyForgotPasswordOtp(dto);
-  }
-
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('reset-password')
-  @ApiOperation({ summary: 'Reset password with OTP' })
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
-  }
-
-  @Public()
-  @Throttle(AUTH_STRICT)
-  @Post('resend-otp')
-  @ApiOperation({ summary: 'Resend OTP' })
-  resendOtp(@Body() dto: ResendOtpDto, @Req() req: FastifyRequest) {
-    return this.authService.resendOtp(dto, req.requestId);
-  }
-
-  @Post('send-email-verification')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Send email verification OTP' })
-  sendEmailVerification(@Req() req: RequestWithUser, @Body() dto: SendEmailVerificationDto) {
-    return this.authService.sendEmailVerification(req.user.id, dto);
-  }
-
-  @Public()
-  @Post('verify-email')
-  @ApiOperation({ summary: 'Verify email with OTP' })
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.authService.verifyEmail(dto);
-  }
-
   @Post('change-password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change password' })
@@ -205,27 +108,6 @@ export class AuthController {
       req.ip,
       req.headers['user-agent'] as string,
     );
-  }
-
-  @Post('change-email')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Request email change OTP' })
-  changeEmail(@Req() req: RequestWithUser, @Body() dto: ChangeEmailDto) {
-    return this.authService.changeEmail(req.user.id, dto);
-  }
-
-  @Post('verify-change-email')
-  @UseInterceptors(CookieInterceptor)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Verify email change OTP' })
-  async verifyChangeEmail(@Req() req: RequestWithUser, @Body() dto: VerifyChangeEmailDto) {
-    const result = await this.authService.verifyChangeEmail(
-      req.user.id,
-      dto,
-      req.ip,
-      req.headers['user-agent'] as string,
-    );
-    return { ...result, clearRefreshCookie: true };
   }
 
   @SkipThrottle()

@@ -12,3 +12,5 @@ export { SavedViewDropdown } from './SavedViewDropdown';
 export { TemplateSelector } from './TemplateSelector';
 export { DependenciesCard } from './DependenciesCard';
 export { FollowersSection } from './FollowersSection';
+export { CountdownTimer } from './CountdownTimer';
+export { StatusSmartBadge, PrioritySmartBadge } from './SmartBadge';

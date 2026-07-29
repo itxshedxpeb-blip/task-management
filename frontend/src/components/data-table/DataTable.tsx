@@ -145,6 +145,7 @@ export const DataTable = function DataTable<T = Record<string, any>>({
   // Keep the current page within range when the data set shrinks (e.g. after a
   // search or filter narrows results) so users never land on an empty page.
   // Backend pages are 1-based — never emit page 0 when totalPages is 0.
+  /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
     const safeTotalPages = Math.max(1, totalPages);
     if (currentPage > safeTotalPages) {
@@ -155,6 +156,7 @@ export const DataTable = function DataTable<T = Record<string, any>>({
       }
     }
   }, [currentPage, totalPages, pagination, onPageChange]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const paginatedData = useMemo(() => {
     // If external pagination is provided, data is already paginated from backend

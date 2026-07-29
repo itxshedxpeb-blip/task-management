@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { dayjs } from '@/lib/date-utils';
 import { ChecklistItem } from '../types';
 
 interface TaskChecklistProps {
@@ -52,7 +53,7 @@ export const TaskChecklist: React.FC<TaskChecklistProps> = ({
         return {
           ...item,
           completed: !item.completed,
-          completedAt: !item.completed ? new Date() : undefined,
+          completedAt: !item.completed ? dayjs().toDate() : undefined,
           completedBy: !item.completed ? 'current-user' : undefined,
         };
       }

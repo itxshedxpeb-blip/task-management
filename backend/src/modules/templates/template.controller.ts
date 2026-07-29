@@ -24,12 +24,11 @@ export class TemplateController {
   @RequirePermissions('template:list')
   @ApiOperation({ summary: 'List templates' })
   async findAll(
-    @CurrentUser('organizationId') organizationId: string,
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
     @Query('search') search?: string,
   ) {
-    const data = await this.templateService.findAll(organizationId, {
+    const data = await this.templateService.findAll({
       page: Number(page) || 1,
       pageSize: Number(pageSize) || 25,
       search,
@@ -42,21 +41,17 @@ export class TemplateController {
   @ApiOperation({ summary: 'Create template' })
   async create(
     @Body() dto: CreateTemplateDto,
-    @CurrentUser('organizationId') organizationId: string,
     @CurrentUser('id') userId: string,
   ) {
-    const data = await this.templateService.create(dto, organizationId, userId);
+    const data = await this.templateService.create(dto, userId);
     return { message: 'Template created successfully.', data };
   }
 
   @Get(':id')
   @RequirePermissions('template:list')
   @ApiOperation({ summary: 'Get template' })
-  async findById(
-    @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.templateService.findById(id, organizationId);
+  async findById(@Param('id') id: string) {
+    const data = await this.templateService.findById(id);
     return { message: 'Template fetched.', data };
   }
 
@@ -66,20 +61,16 @@ export class TemplateController {
   async update(
     @Param('id') id: string,
     @Body() dto: Partial<CreateTemplateDto>,
-    @CurrentUser('organizationId') organizationId: string,
   ) {
-    const data = await this.templateService.update(id, dto, organizationId);
+    const data = await this.templateService.update(id, dto);
     return { message: 'Template updated.', data };
   }
 
   @Delete(':id')
   @RequirePermissions('template:delete')
   @ApiOperation({ summary: 'Delete template' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    await this.templateService.delete(id, organizationId);
+  async delete(@Param('id') id: string) {
+    await this.templateService.delete(id);
     return { message: 'Template deleted successfully.' };
   }
 
@@ -88,11 +79,10 @@ export class TemplateController {
   @ApiOperation({ summary: 'Apply template to create a task' })
   async apply(
     @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('name') userName: string,
   ) {
-    const data = await this.templateService.apply(id, organizationId, userId, userName || 'Unknown');
+    const data = await this.templateService.apply(id, userId, userName || 'Unknown');
     return { message: 'Task created from template.', data };
   }
 }

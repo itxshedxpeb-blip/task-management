@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Upload, Download, Trash2, FileText, FileImage, FileArchive, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { dayjs } from '@/lib/date-utils';
 import { Attachment, AttachmentType } from '../types';
 
 interface TaskAttachmentsProps {
@@ -77,7 +78,7 @@ export const TaskAttachments: React.FC<TaskAttachmentsProps> = ({
             fileUrl: result,
             uploadedBy: currentUserId,
             uploadedByName: currentUserName,
-            uploadedAt: new Date(),
+            uploadedAt: dayjs().toDate(),
           };
 
           onChange([...attachments, newAttachment]);

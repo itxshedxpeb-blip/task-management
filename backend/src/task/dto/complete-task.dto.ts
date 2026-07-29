@@ -11,11 +11,6 @@ import {
 import { Type } from 'class-transformer';
 
 export class CompletionProofDto {
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  beforeImages?: string[];
-
   @IsArray()
   @IsString({ each: true })
   afterImages: string[];

@@ -68,23 +68,12 @@ export class CreateTaskDto {
   @IsNumber()
   @Min(0)
   @Type(() => Number)
-  incentiveValue?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
   estimatedHours?: number;
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  beforeImages?: string[];
 
   @IsOptional()
   @IsString()

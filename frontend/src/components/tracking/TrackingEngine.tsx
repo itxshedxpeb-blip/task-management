@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/date-utils';
 import { useTrackingData, useChangeStatus } from '@/features/tracking/hooks/useTracking';
 import { UniversalComments } from './UniversalComments';
 import { ActivityAuditLog } from './ActivityAuditLog';
@@ -78,7 +79,7 @@ function RecordSnapshot({ details }: { details: StageDetails }) {
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (value instanceof Date || (typeof value === 'string' && !isNaN(Date.parse(value)) && value.length > 8)) {
       try {
-        return new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        return formatDate(value);
       } catch {
         return String(value);
       }

@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class CalendarService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getEvents(organizationId: string, from: string, to: string) {
+  async getEvents(from: string, to: string) {
     const fromDate = new Date(from);
     fromDate.setHours(0, 0, 0, 0);
     const toDate = new Date(to);
@@ -13,16 +13,11 @@ export class CalendarService {
 
     const tasks = await this.prisma.task.findMany({
       where: {
-        organizationId,
         isDeleted: false,
         isArchived: false,
         OR: [
-          {
-            dueDate: { gte: fromDate, lte: toDate },
-          },
-          {
-            startDate: { gte: fromDate, lte: toDate },
-          },
+          { dueDate: { gte: fromDate, lte: toDate } },
+          { startDate: { gte: fromDate, lte: toDate } },
           {
             AND: [
               { startDate: { lte: fromDate } },
@@ -69,10 +64,9 @@ export class CalendarService {
     return events;
   }
 
-  async getRecurringEvents(organizationId: string) {
+  async getRecurringEvents() {
     const tasks = await this.prisma.task.findMany({
       where: {
-        organizationId,
         isDeleted: false,
         isArchived: false,
         category: 'Meeting',

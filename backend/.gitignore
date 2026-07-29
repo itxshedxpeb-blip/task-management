@@ -96,7 +96,4 @@ public/uploads/
 *.local
 
 
-package-lock.json
-package.json
-
 *.tsbuildinfo

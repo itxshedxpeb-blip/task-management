@@ -30,7 +30,6 @@ export class SessionService {
 
   async createSession(params: {
     userId: string;
-    organizationId?: string;
     device?: string;
     browser?: string;
     os?: string;
@@ -39,7 +38,7 @@ export class SessionService {
     isRememberMe?: boolean;
     refreshTokenHash?: string;
   }) {
-    const { userId, organizationId, refreshTokenHash, isRememberMe = false, ...rest } = params;
+    const { userId, refreshTokenHash, isRememberMe = false, ...rest } = params;
     const sessionToken = randomBytes(48).toString('hex');
     const now = new Date();
     const absoluteExpiry = new Date(now.getTime() + this.absoluteMs(isRememberMe));
@@ -52,7 +51,6 @@ export class SessionService {
     const session = await this.prisma.session.create({
       data: {
         userId,
-        organizationId,
         token: sessionToken,
         refreshToken: refreshTokenHash,
         expiresAt: absoluteExpiry,
@@ -83,7 +81,6 @@ export class SessionService {
       where: { id: sessionId },
       select: { lastActivity: true },
     });
-    // Throttle DB writes: only touch if last activity older than 60s
     if (session?.lastActivity && now.getTime() - session.lastActivity.getTime() < 60_000) {
       return;
     }

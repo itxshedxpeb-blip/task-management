@@ -1,74 +1,96 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+
+import { useState } from 'react';
 import Link from 'next/link';
-import { ROUTES } from '@/core/routes';
+import { Eye, EyeOff, LayoutGrid } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/features/auth/AuthContext';
-import { loginSchema } from '@/features/auth/validations';
-import { FormInput } from '@/components/form/FormInput';
-import { useTheme } from '@/theme/ThemeProvider';
+import { ROUTES } from '@/core/routes';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [apiError, setApiError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const form = useForm({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', rememberMe: false },
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const reason = params.get('reason');
-    if (reason === 'session_expired' || reason === 'session_required') {
-      setApiError('Your session has expired. Please sign in again.');
-    }
-  }, []);
-
-  const onSubmit = async (data: any) => {
-    setSubmitting(true);
-    setApiError('');
-    const result = await login(data);
-    setSubmitting(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const result = await login({ email, password });
+    setLoading(false);
     if (!result.success) {
-      setApiError(result.error || 'Login failed');
+      setError(result.error || 'Login failed');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">TaskFlow</h2>
-          <p className="mt-2 text-center text-sm text-muted-foreground">Sign in to your account</p>
-        </div>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-4" noValidate>
-          <FormInput label="Email" type="email" placeholder="you@example.com" autoComplete="email"
-            registration={form.register('email')} error={form.formState.errors.email?.message as string}
-            required disabled={submitting} />
-          <FormInput label="Password" type="password" placeholder="Enter your password" autoComplete="current-password"
-            registration={form.register('password')} error={form.formState.errors.password?.message as string}
-            required disabled={submitting} />
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input type="checkbox" {...form.register('rememberMe')} className="rounded border-border" />
-              Remember me
-            </label>
-            <Link href={ROUTES.forgotPassword} className="text-sm font-medium text-primary hover:opacity-80">
-              Forgot password?
-            </Link>
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
+            <LayoutGrid className="w-6 h-6 text-primary-foreground" />
           </div>
-          {apiError && (<div className="rounded-md bg-destructive/10 p-3" role="alert"><p className="text-sm text-destructive">{apiError}</p></div>)}
-          <button type="submit" disabled={submitting}
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed">
-            {submitting ? (<span className="inline-flex items-center gap-2"><span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />Signing in...</span>) : 'Sign in'}
-          </button>
-          <p className="text-center text-sm text-muted-foreground">Don&apos;t have an account?{' '}
-            <Link href={ROUTES.register} className="font-medium text-primary hover:opacity-80">Create one</Link>
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">TaskFlow</h1>
+          <p className="text-sm text-muted-foreground mt-1">Sign in to your workspace</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
         </form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Don&apos;t have an account?{' '}
+          <Link href={ROUTES.register} className="font-medium text-primary hover:opacity-80">
+            Create one
+          </Link>
+        </p>
       </div>
     </div>
   );

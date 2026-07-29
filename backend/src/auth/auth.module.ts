@@ -9,7 +9,6 @@ import { TokenService } from './services/token.service';
 import { SessionService } from './services/session.service';
 import { AuditService } from './services/audit.service';
 import { LoginProtectionService } from './services/login-protection.service';
-import { OtpService } from './services/otp.service';
 import { CookieInterceptor } from './cookie.interceptor';
 
 @Module({
@@ -21,8 +20,7 @@ import { CookieInterceptor } from './cookie.interceptor';
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('jwt.secret'),
         signOptions: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          expiresIn: (configService.get<string>('jwt.accessExpiresIn') || '30m') as any,
+          expiresIn: (configService.get<string>('jwt.expiresIn') || '30m') as any,
         },
       }),
     }),
@@ -35,10 +33,9 @@ import { CookieInterceptor } from './cookie.interceptor';
     SessionService,
     AuditService,
     LoginProtectionService,
-    OtpService,
     CookieInterceptor,
   ],
-  exports: [AuthService, TokenService, SessionService, AuditService, OtpService, JwtModule],
+  exports: [AuthService, TokenService, SessionService, AuditService, JwtModule],
 })
 export class AuthModule {
   static readonly moduleCapability = { capability: 'auth' } as const;

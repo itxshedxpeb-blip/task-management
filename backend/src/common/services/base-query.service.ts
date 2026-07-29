@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BadRequestException, ForbiddenException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaginationResult, PaginationMeta } from '../types';
 
@@ -10,7 +10,6 @@ export interface QueryConfig {
   sortColumns: string[];
   defaultSort?: string;
   defaultPageSize?: number;
-  orgScoped?: boolean;
 }
 
 export interface WhereClause {
@@ -47,18 +46,8 @@ export class BaseQueryService {
     return (this.prisma as any)[this.config.model];
   }
 
-  /** Fail closed: org-scoped models must never query without a tenant id. */
-  protected requireOrganizationId(organizationId?: string): string {
-    if (!this.config.orgScoped) return organizationId || '';
-    if (!organizationId) {
-      throw new ForbiddenException('Organization context is required');
-    }
-    return organizationId;
-  }
-
   async findAll(
     query: Record<string, any>,
-    organizationId?: string,
     extraWhere?: WhereClause,
     extraInclude?: Record<string, any>,
   ): Promise<PaginationResult<any>> {
@@ -76,10 +65,6 @@ export class BaseQueryService {
 
     const skip = (page - 1) * pageSize;
     const where: WhereClause = { isDeleted: false };
-
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
 
     if (search && search.length >= 2) {
       where.OR = this.config.searchFields.map((field) => ({
@@ -156,10 +141,8 @@ export class BaseQueryService {
     return { rows: serializeDecimals(rows), pagination };
   }
 
-  /** Paginated export helper — collects up to maxRows without silent single-page truncation. */
   async findAllForExport(
     query: Record<string, any>,
-    organizationId?: string,
     maxRows = 10000,
   ): Promise<PaginationResult<any>> {
     const pageSize = 500;
@@ -167,7 +150,7 @@ export class BaseQueryService {
     const rows: any[] = [];
 
     while (rows.length < maxRows) {
-      const batch = await this.findAll({ ...query, page, pageSize }, organizationId);
+      const batch = await this.findAll({ ...query, page, pageSize });
       rows.push(...batch.rows);
       if (!batch.pagination.hasNext || batch.rows.length === 0) break;
       page += 1;
@@ -187,11 +170,8 @@ export class BaseQueryService {
     };
   }
 
-  async findById(id: string, extraInclude?: any, organizationId?: string): Promise<any> {
+  async findById(id: string, extraInclude?: any): Promise<any> {
     const where: any = { id, isDeleted: false };
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
     const options: any = { where };
     if (extraInclude) options.include = extraInclude;
 
@@ -202,11 +182,8 @@ export class BaseQueryService {
     return serializeDecimals(record);
   }
 
-  async softDelete(id: string, deletedById?: string, organizationId?: string): Promise<any> {
+  async softDelete(id: string, deletedById?: string): Promise<any> {
     const where: any = { id, isDeleted: false };
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
 
     const record = await this.client.findFirst({ where });
     if (!record) {
@@ -226,12 +203,8 @@ export class BaseQueryService {
   async bulkDelete(
     ids: string[],
     deletedById?: string,
-    organizationId?: string,
   ): Promise<{ count: number }> {
     const where: any = { id: { in: ids }, isDeleted: false };
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
 
     const result = await this.client.updateMany({
       where,
@@ -247,12 +220,8 @@ export class BaseQueryService {
   async bulkStatusUpdate(
     ids: string[],
     status: string,
-    organizationId?: string,
   ): Promise<{ count: number }> {
     const where: any = { id: { in: ids }, isDeleted: false };
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
 
     const result = await this.client.updateMany({
       where,
@@ -261,11 +230,8 @@ export class BaseQueryService {
     return { count: result.count };
   }
 
-  async restore(id: string, organizationId?: string): Promise<any> {
+  async restore(id: string): Promise<any> {
     const where: any = { id, isDeleted: true };
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
 
     const record = await this.client.findFirst({ where });
     if (!record) {
@@ -282,12 +248,8 @@ export class BaseQueryService {
     });
   }
 
-  async getStats(organizationId?: string, extraWhere?: WhereClause): Promise<Record<string, any>> {
+  async getStats(extraWhere?: WhereClause): Promise<Record<string, any>> {
     const where: WhereClause = { isDeleted: false };
-
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
 
     if (extraWhere) {
       Object.assign(where, extraWhere);
@@ -299,7 +261,6 @@ export class BaseQueryService {
 
   async getCombobox(
     query: Record<string, any>,
-    organizationId?: string,
     selectFields?: string[],
   ): Promise<PaginationResult<any>> {
     const { page = 1, pageSize = 50, search } = query;
@@ -309,10 +270,6 @@ export class BaseQueryService {
     defaultSelect.forEach((f) => (select[f] = true));
 
     const where: WhereClause = { isDeleted: false };
-
-    if (this.config.orgScoped) {
-      where.organizationId = this.requireOrganizationId(organizationId);
-    }
 
     if (search && search.length >= 1) {
       const searchField = this.config.searchFields[0] || 'name';

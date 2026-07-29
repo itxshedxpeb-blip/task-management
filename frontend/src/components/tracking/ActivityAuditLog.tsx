@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { formatDate, dayjs } from '@/lib/date-utils';
 import { useTimeline } from '@/features/tracking/hooks/useTracking';
 import {
   ArrowRight,
@@ -49,32 +50,22 @@ function isTechnicalValue(value?: string | null): boolean {
 }
 
 function formatTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleTimeString('en-IN', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+  return dayjs(dateStr).format('hh:mm A');
 }
 
 function dayLabel(dateStr: string): string {
-  const d = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+  const d = dayjs(dateStr);
+  const today = dayjs();
+  const yesterday = today.subtract(1, 'day');
 
-  const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-
-  if (sameDay(d, today)) return 'Today';
-  if (sameDay(d, yesterday)) return 'Yesterday';
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  if (d.isSame(today, 'day')) return 'Today';
+  if (d.isSame(yesterday, 'day')) return 'Yesterday';
+  return formatDate(dateStr);
 }
 
 function dayKey(dateStr: string): string {
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const d = dayjs(dateStr);
+  return `${d.year()}-${d.month()}-${d.date()}`;
 }
 
 function CardIcon({ type }: { type: TimelineEntry['type'] }) {

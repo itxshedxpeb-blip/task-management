@@ -5,15 +5,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  Building2,
   Users,
-  Globe,
-  CreditCard,
+  CheckSquare,
   BarChart3,
-  FileText,
   Settings,
   ChevronLeft,
   ChevronRight,
+  Search,
   Bell,
   Sun,
   Moon,
@@ -48,17 +46,13 @@ interface NavItem {
   title: string;
   href: string;
   icon: LucideIcon;
-  badge?: number;
 }
 
 const ADMIN_NAV_ITEMS: NavItem[] = [
   { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { title: 'Companies', href: '/admin/companies', icon: Building2 },
-  { title: 'Users', href: '/admin/users', icon: Users, badge: 12 },
-  { title: 'Organizations', href: '/admin/organizations', icon: Globe },
-  { title: 'Plans & Billing', href: '/admin/plans', icon: CreditCard },
-  { title: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-  { title: 'Audit Logs', href: '/admin/audit-logs', icon: FileText },
+  { title: 'Employees', href: '/admin/employees', icon: Users },
+  { title: 'Tasks', href: '/admin/tasks', icon: CheckSquare },
+  { title: 'Reports', href: '/admin/reports', icon: BarChart3 },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
@@ -89,7 +83,7 @@ const AdminSidebarNav = memo(function AdminSidebarNav({
                   className={cn(
                     'flex items-center justify-center w-full h-10 rounded-lg transition-all duration-200',
                     active
-                      ? 'bg-[var(--sa-accent)]/15 text-[var(--sa-accent)]'
+                      ? 'bg-[#f97316]/15 text-[#f97316]'
                       : 'text-muted-foreground hover:bg-card-hover hover:text-foreground'
                   )}
                 >
@@ -120,17 +114,12 @@ const AdminSidebarNav = memo(function AdminSidebarNav({
                   className={cn(
                     'flex items-center gap-3 px-4 h-10 rounded-lg transition-all duration-200',
                     active
-                      ? 'bg-[var(--sa-accent)]/15 text-[var(--sa-accent)] font-medium'
+                      ? 'bg-[#f97316]/15 text-[#f97316] font-medium'
                       : 'text-muted-foreground hover:bg-card-hover hover:text-foreground'
                   )}
                 >
                   <Icon size={18} />
                   <span className="flex-1 text-sm truncate">{item.title}</span>
-                  {item.badge && item.badge > 0 && (
-                    <Badge className="h-5 min-w-[20px] px-1.5 text-[10px] bg-[var(--sa-accent)] text-white border-0">
-                      {item.badge}
-                    </Badge>
-                  )}
                 </Link>
               </li>
             );
@@ -170,7 +159,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile overlay */}
       {isOpen && !isDesktop && (
         <div
           className="fixed inset-0 z-30 bg-black/50 transition-opacity"
@@ -178,7 +166,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           'fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-border transition-all duration-300 flex flex-col overflow-hidden',
@@ -191,7 +178,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
               : '-translate-x-full'
         )}
       >
-        {/* Logo */}
         <div
           className={cn(
             'flex items-center border-b border-border flex-shrink-0 transition-all',
@@ -202,18 +188,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
         >
           {(!isCollapsed || !isDesktop) && (
             <Link href="/admin/dashboard" className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-[var(--sa-accent)] flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#f97316] flex items-center justify-center flex-shrink-0">
                 <Shield className="w-4 h-4 text-white" />
               </div>
               <span className="text-lg font-bold text-foreground tracking-tight truncate">
-                Admin Panel
+                TaskFlow Admin
               </span>
             </Link>
           )}
 
           {isCollapsed && isDesktop && (
-            <Link href="/admin/dashboard" title="Admin Panel" className="flex items-center justify-center">
-              <div className="w-8 h-8 rounded-lg bg-[var(--sa-accent)] flex items-center justify-center">
+            <Link href="/admin/dashboard" title="TaskFlow Admin" className="flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#f97316] flex items-center justify-center">
                 <Shield className="w-4 h-4 text-white" />
               </div>
             </Link>
@@ -242,15 +228,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Navigation */}
-        <AdminSidebarNav pathname={pathname} collapsed={isCollapsed && isDesktop} />
+        <AdminSidebarNav pathname={pathname || '/'} collapsed={isCollapsed && isDesktop} />
 
-        {/* User section */}
         <div className={cn('border-t border-border flex-shrink-0', isCollapsed ? 'p-3' : 'px-4 py-3')}>
           {!isCollapsed || !isDesktop ? (
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-[var(--sa-accent)]/15 flex items-center justify-center flex-shrink-0">
-                <span className="text-[var(--sa-accent)] text-xs font-semibold">{initials}</span>
+              <div className="w-9 h-9 rounded-full bg-[#f97316]/15 flex items-center justify-center flex-shrink-0">
+                <span className="text-[#f97316] text-xs font-semibold">{initials}</span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground truncate">{user?.name || 'Super Admin'}</p>
@@ -259,20 +243,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="w-9 h-9 rounded-full bg-[var(--sa-accent)]/15 flex items-center justify-center" title={user?.name || 'Super Admin'}>
-                <span className="text-[var(--sa-accent)] text-xs font-semibold">{initials}</span>
+              <div className="w-9 h-9 rounded-full bg-[#f97316]/15 flex items-center justify-center" title={user?.name || 'Super Admin'}>
+                <span className="text-[#f97316] text-xs font-semibold">{initials}</span>
               </div>
             </div>
           )}
         </div>
       </aside>
 
-      {/* Main content */}
       <main
         className="transition-all duration-300 min-h-screen"
         style={{ marginLeft: sidebarWidth }}
       >
-        {/* Top navbar */}
         <header className="h-14 bg-navbar border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <Button
@@ -286,16 +268,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" />
               </svg>
             </Button>
-            <h1 className="text-base font-semibold text-foreground">
-              System Administration
-            </h1>
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                placeholder="Search..."
+                className="h-9 w-64 lg:w-80 pl-10 pr-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 flex items-center justify-center p-0 bg-[var(--sa-accent)] text-white text-[9px] border-0">
-                3
+              <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 flex items-center justify-center p-0 bg-[#f97316] text-white text-[9px] border-0">
+                0
               </Badge>
             </Button>
 
@@ -311,8 +297,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 px-2 ml-1">
-                  <div className="w-7 h-7 rounded-full bg-[var(--sa-accent)]/15 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[var(--sa-accent)] text-[10px] font-semibold">{initials}</span>
+                  <div className="w-7 h-7 rounded-full bg-[#f97316]/15 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[#f97316] text-[10px] font-semibold">{initials}</span>
                   </div>
                   <span className="hidden sm:inline text-sm font-medium text-foreground truncate max-w-[120px]">
                     {user?.name || 'Super Admin'}
@@ -339,7 +325,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Page content */}
         <div className="p-4 lg:p-6">{children}</div>
       </main>
     </div>

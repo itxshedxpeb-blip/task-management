@@ -13,7 +13,6 @@ import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('departments')
 @ApiBearerAuth()
@@ -25,12 +24,11 @@ export class DepartmentController {
   @RequirePermissions('department:list')
   @ApiOperation({ summary: 'List departments' })
   async findAll(
-    @CurrentUser('organizationId') organizationId: string,
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
     @Query('search') search?: string,
   ) {
-    const data = await this.departmentService.findAll(organizationId, {
+    const data = await this.departmentService.findAll({
       page: Number(page) || 1,
       pageSize: Number(pageSize) || 25,
       search,
@@ -41,22 +39,16 @@ export class DepartmentController {
   @Post()
   @RequirePermissions('department:create')
   @ApiOperation({ summary: 'Create department' })
-  async create(
-    @Body() dto: CreateDepartmentDto,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.departmentService.create(dto, organizationId);
+  async create(@Body() dto: CreateDepartmentDto) {
+    const data = await this.departmentService.create(dto);
     return { message: 'Department created successfully.', data };
   }
 
   @Get(':id')
   @RequirePermissions('department:list')
-  @ApiOperation({ summary: 'Get department with teams and members' })
-  async findById(
-    @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    const data = await this.departmentService.findById(id, organizationId);
+  @ApiOperation({ summary: 'Get department with members' })
+  async findById(@Param('id') id: string) {
+    const data = await this.departmentService.findById(id);
     return { message: 'Department fetched.', data };
   }
 
@@ -66,20 +58,16 @@ export class DepartmentController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateDepartmentDto,
-    @CurrentUser('organizationId') organizationId: string,
   ) {
-    const data = await this.departmentService.update(id, dto, organizationId);
+    const data = await this.departmentService.update(id, dto);
     return { message: 'Department updated.', data };
   }
 
   @Delete(':id')
   @RequirePermissions('department:delete')
   @ApiOperation({ summary: 'Delete department' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser('organizationId') organizationId: string,
-  ) {
-    await this.departmentService.delete(id, organizationId);
+  async delete(@Param('id') id: string) {
+    await this.departmentService.delete(id);
     return { message: 'Department deleted successfully.' };
   }
 
@@ -89,9 +77,8 @@ export class DepartmentController {
   async addMember(
     @Param('id') id: string,
     @Body() body: { userId: string; role?: string },
-    @CurrentUser('organizationId') organizationId: string,
   ) {
-    const data = await this.departmentService.addMember(id, body.userId, body.role || 'member', organizationId);
+    const data = await this.departmentService.addMember(id, body.userId, body.role || 'member');
     return { message: 'Member added to department.', data };
   }
 
@@ -101,9 +88,8 @@ export class DepartmentController {
   async removeMember(
     @Param('id') id: string,
     @Param('userId') userId: string,
-    @CurrentUser('organizationId') organizationId: string,
   ) {
-    await this.departmentService.removeMember(id, userId, organizationId);
+    await this.departmentService.removeMember(id, userId);
     return { message: 'Member removed from department.' };
   }
 }

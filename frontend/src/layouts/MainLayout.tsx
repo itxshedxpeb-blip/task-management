@@ -61,7 +61,10 @@ function NestedMainLayout({
 }: MainLayoutProps) {
   const ctx = useContext(MainLayoutContext);
   const onBackClickRef = useRef(onBackClick);
-  onBackClickRef.current = onBackClick;
+
+  useEffect(() => {
+    onBackClickRef.current = onBackClick;
+  });
 
   useEffect(() => {
     if (!ctx) return;
@@ -69,11 +72,9 @@ function NestedMainLayout({
       title,
       subtitle,
       showBackButton,
-      // Stable wrapper — avoids effect loops from inline onBackClick props
       onBackClick: onBackClickRef.current ? () => onBackClickRef.current?.() : undefined,
       showTopbar,
     });
-    // Do not clear chrome on unmount — next page overwrites; clearing races Strict Mode remounts
   }, [ctx, title, subtitle, showBackButton, showTopbar]);
 
   return <>{children}</>;

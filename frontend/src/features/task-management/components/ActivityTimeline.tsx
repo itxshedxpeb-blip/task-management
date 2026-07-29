@@ -6,20 +6,18 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Clock, 
   CheckCircle, 
-  AlertCircle, 
   FileText, 
   MessageSquare, 
   Paperclip, 
-  Camera,
   Play,
   Pause,
-  RotateCcw,
   User,
   Calendar,
   Tag,
   ListChecks
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/date-utils';
 import { TaskActivity, TaskActivityType } from '../types';
 
 interface ActivityTimelineProps {
@@ -36,24 +34,11 @@ const getActivityIcon = (activityType: TaskActivityType) => {
     case 'Started':
     case 'In Progress':
       return Play;
-    case 'Blocked':
-      return AlertCircle;
-    case 'Unblocked':
-    case 'Reopened':
-      return RotateCcw;
-    case 'Review':
-      return Clock;
-    case 'Photos Uploaded':
-    case 'Before Images Added':
-    case 'After Images Added':
-      return Camera;
+    case 'On Hold':
+      return Pause;
     case 'Completed':
       return CheckCircle;
-    case 'Verified':
-      return CheckCircle;
-    case 'Rejected':
-      return AlertCircle;
-    case 'Closed':
+    case 'Archived':
     case 'Cancelled':
       return Clock;
     case 'Reassigned':
@@ -82,20 +67,14 @@ const getActivityColor = (activityType: TaskActivityType) => {
     case 'Started':
     case 'In Progress':
       return 'text-sky-400';
-    case 'Blocked':
-    case 'Rejected':
     case 'Cancelled':
       return 'text-rose-400';
     case 'Completed':
-    case 'Verified':
       return 'text-emerald-400';
-    case 'Review':
+    case 'On Hold':
     case 'Due Date Changed':
     case 'Priority Changed':
       return 'text-amber-400';
-    case 'Photos Uploaded':
-    case 'Before Images Added':
-    case 'After Images Added':
     case 'Attachment Added':
       return 'text-violet-400';
     case 'Comment Added':
@@ -115,20 +94,14 @@ const getActivityBgColor = (activityType: TaskActivityType) => {
     case 'Started':
     case 'In Progress':
       return 'bg-sky-50 border-sky-200';
-    case 'Blocked':
-    case 'Rejected':
     case 'Cancelled':
       return 'bg-rose-50 border-rose-200';
     case 'Completed':
-    case 'Verified':
       return 'bg-emerald-50 border-emerald-200';
-    case 'Review':
+    case 'On Hold':
     case 'Due Date Changed':
     case 'Priority Changed':
       return 'bg-amber-50 border-amber-200';
-    case 'Photos Uploaded':
-    case 'Before Images Added':
-    case 'After Images Added':
     case 'Attachment Added':
       return 'bg-violet-50 border-violet-200';
     case 'Comment Added':
@@ -144,13 +117,10 @@ const getActivityBgColor = (activityType: TaskActivityType) => {
 const getActivityBadgeVariant = (activityType: TaskActivityType): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (activityType) {
     case 'Completed':
-    case 'Verified':
       return 'default';
-    case 'Blocked':
-    case 'Rejected':
     case 'Cancelled':
       return 'destructive';
-    case 'Review':
+    case 'On Hold':
     case 'Due Date Changed':
     case 'Priority Changed':
       return 'secondary';
@@ -175,7 +145,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
 
   // Sort activities by timestamp (newest first)
   const sortedActivities = [...activities].sort(
-    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
   return (
@@ -225,7 +195,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                       </span>
                     </div>
                     <span className="text-[10px] text-slate-600 whitespace-nowrap">
-                      {activity.timestamp.toLocaleString()}
+                      {formatDateTime(activity.timestamp)}
                     </span>
                   </div>
 

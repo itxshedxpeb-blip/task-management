@@ -13,7 +13,7 @@ export default function RootPage() {
       router.replace('/login');
       return;
     }
-    if (user?.userType === 'SYSTEM_ADMIN') {
+    if (user?.userType === 'SUPER_ADMIN') {
       router.replace('/admin/dashboard');
     } else {
       router.replace('/app');

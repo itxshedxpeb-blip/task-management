@@ -7,12 +7,12 @@ import { UpdateDepartmentDto } from './dto/update-department.dto';
 export class DepartmentService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(organizationId: string, query: { page?: number; pageSize?: number; search?: string }) {
+  async findAll(query: { page?: number; pageSize?: number; search?: string }) {
     const { page = 1, pageSize = 25, search } = query;
     const skip = (page - 1) * pageSize;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { organizationId, isDeleted: false };
+    const where: any = { isDeleted: false };
     if (search && search.length >= 2) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -27,7 +27,7 @@ export class DepartmentService {
         take: pageSize,
         orderBy: { createdAt: 'desc' },
         include: {
-          _count: { select: { members: true, teams: true } },
+          _count: { select: { members: true } },
         },
       }),
       this.prisma.department.count({ where }),
@@ -46,9 +46,9 @@ export class DepartmentService {
     };
   }
 
-  async findById(id: string, organizationId: string) {
+  async findById(id: string) {
     const department = await this.prisma.department.findFirst({
-      where: { id, organizationId, isDeleted: false },
+      where: { id, isDeleted: false },
       include: {
         members: {
           include: {
@@ -57,19 +57,15 @@ export class DepartmentService {
             },
           },
         },
-        teams: {
-          where: { isDeleted: false },
-          select: { id: true, name: true, leadId: true },
-        },
       },
     });
     if (!department) throw new NotFoundException('Department not found');
     return department;
   }
 
-  async create(dto: CreateDepartmentDto, organizationId: string) {
+  async create(dto: CreateDepartmentDto) {
     const existing = await this.prisma.department.findFirst({
-      where: { organizationId, name: dto.name, isDeleted: false },
+      where: { name: dto.name, isDeleted: false },
     });
     if (existing) {
       throw new BadRequestException('A department with this name already exists');
@@ -77,7 +73,6 @@ export class DepartmentService {
 
     return this.prisma.department.create({
       data: {
-        organizationId,
         name: dto.name,
         description: dto.description,
         managerId: dto.managerId,
@@ -85,15 +80,15 @@ export class DepartmentService {
     });
   }
 
-  async update(id: string, dto: UpdateDepartmentDto, organizationId: string) {
+  async update(id: string, dto: UpdateDepartmentDto) {
     const department = await this.prisma.department.findFirst({
-      where: { id, organizationId, isDeleted: false },
+      where: { id, isDeleted: false },
     });
     if (!department) throw new NotFoundException('Department not found');
 
     if (dto.name && dto.name !== department.name) {
       const existing = await this.prisma.department.findFirst({
-        where: { organizationId, name: dto.name, isDeleted: false, id: { not: id } },
+        where: { name: dto.name, isDeleted: false, id: { not: id } },
       });
       if (existing) {
         throw new BadRequestException('A department with this name already exists');
@@ -111,9 +106,9 @@ export class DepartmentService {
     });
   }
 
-  async delete(id: string, organizationId: string) {
+  async delete(id: string) {
     const department = await this.prisma.department.findFirst({
-      where: { id, organizationId, isDeleted: false },
+      where: { id, isDeleted: false },
     });
     if (!department) throw new NotFoundException('Department not found');
 
@@ -123,9 +118,9 @@ export class DepartmentService {
     });
   }
 
-  async addMember(id: string, userId: string, role: string, organizationId: string) {
+  async addMember(id: string, userId: string, role: string) {
     const department = await this.prisma.department.findFirst({
-      where: { id, organizationId, isDeleted: false },
+      where: { id, isDeleted: false },
     });
     if (!department) throw new NotFoundException('Department not found');
 
@@ -136,10 +131,8 @@ export class DepartmentService {
       throw new BadRequestException('User is already a member of this department');
     }
 
-    const user = await this.prisma.user.findFirst({
-      where: { id, organizationId },
-    });
-    if (!user) throw new NotFoundException('User not found in this organization');
+    const user = await this.prisma.user.findFirst({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
 
     return this.prisma.departmentMember.create({
       data: {
@@ -155,9 +148,9 @@ export class DepartmentService {
     });
   }
 
-  async removeMember(id: string, userId: string, organizationId: string) {
+  async removeMember(id: string, userId: string) {
     const department = await this.prisma.department.findFirst({
-      where: { id, organizationId, isDeleted: false },
+      where: { id, isDeleted: false },
     });
     if (!department) throw new NotFoundException('Department not found');
 

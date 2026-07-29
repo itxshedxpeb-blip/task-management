@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/core/api';
 import type { Task, TaskQuery, TaskStatus, TaskPriority } from '@/features/task-management/types';
+import dayjs from 'dayjs';
 
 interface BackendResponse<T> {
   message?: string;
@@ -27,6 +28,10 @@ export function useTasks(params?: {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  dateFrom?: string;
+  dateTo?: string;
+  /** When true, skips the default 7-day window (shows all tasks). */
+  showAll?: boolean;
 }) {
   return useQuery({
     queryKey: ['module-tasks', params],
@@ -39,6 +44,12 @@ export function useTasks(params?: {
       if (params?.search) query.search = params.search;
       if (params?.sortBy) query.sortBy = params.sortBy;
       if (params?.sortOrder) query.sortOrder = params.sortOrder;
+      if (params?.dateFrom) query.dateFrom = params.dateFrom;
+      if (params?.dateTo) query.dateTo = params.dateTo;
+      if (!params?.showAll && !params?.dateFrom && !params?.dateTo) {
+        query.dateFrom = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
+        query.dateTo = dayjs().format('YYYY-MM-DD');
+      }
       const res = await api.get<BackendResponse<PaginatedResponse<Task>>>('/tasks', { params: query });
       return res.data;
     },

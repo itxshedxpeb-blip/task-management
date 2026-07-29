@@ -1,5 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios';
-import { getAccessToken, getTenantId } from '@/core/auth/session';
+import { getAccessToken } from '@/core/auth/session';
+import { config } from '@/lib/config';
 
 export type CapabilityStatus = 'available' | 'backend_pending' | 'unavailable' | 'unknown';
 
@@ -19,8 +20,8 @@ export class BackendPendingError extends Error {
   }
 }
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-const capabilitiesPath = process.env.NEXT_PUBLIC_CAPABILITIES_PATH;
+const apiBaseUrl = config.apiUrl;
+const capabilitiesPath = config.capabilitiesPath;
 let cachedCapabilities: CapabilitiesResponse | null = null;
 let loadingCapabilities: Promise<CapabilitiesResponse | null> | null = null;
 const unavailableResources = new Set<string>();
@@ -63,7 +64,6 @@ export async function loadCapabilities(): Promise<CapabilitiesResponse | null> {
       withCredentials: true,
       headers: {
         Authorization: `Bearer ${getAccessToken()}`,
-        ...(getTenantId() ? { 'X-Tenant-ID': getTenantId()! } : {}),
       },
     })
     .then((response) => {

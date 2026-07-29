@@ -22,7 +22,7 @@ export class AdminService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    if (user.userType !== 'SYSTEM_ADMIN') {
+    if (user.userType !== 'SUPER_ADMIN') {
       throw new UnauthorizedException('Access denied. Not a system administrator.');
     }
 
@@ -59,20 +59,22 @@ export class AdminService {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const [
-      totalCompanies,
+      totalEmployees,
       totalUsers,
       activeTasks,
       recentRegistrations,
-      suspendedCompanies,
       totalDepartments,
-      totalTeams,
+      completedTasks,
+      completedOnTime,
+      completedLate,
+      overdueTasks,
     ] = await Promise.all([
-      this.prisma.organization.count({ where: { isDeleted: false } }),
+      this.prisma.user.count({ where: { isActive: true, userType: 'EMPLOYEE' } }),
       this.prisma.user.count({ where: { isActive: true } }),
       this.prisma.task.count({
         where: {
           isDeleted: false,
-          status: { in: ['Todo', 'InProgress', 'Reopened'] },
+          status: { in: ['Draft', 'Todo', 'InProgress', 'OnHold'] },
         },
       }),
       this.prisma.user.count({
@@ -80,156 +82,52 @@ export class AdminService {
           createdAt: { gte: thirtyDaysAgo },
         },
       }),
-      this.prisma.organization.count({
-        where: { isDeleted: false, status: 'Suspended' },
-      }),
       this.prisma.department.count({ where: { isDeleted: false } }),
-      this.prisma.team.count({ where: { isDeleted: false } }),
+      this.prisma.task.count({
+        where: {
+          isDeleted: false,
+          status: { in: ['Completed', 'Archived'] },
+        },
+      }),
+      this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*)::int as count FROM "Task"
+        WHERE "isDeleted" = false
+          AND "status" IN ('Completed', 'Archived')
+          AND "completedAt" IS NOT NULL
+          AND "completedAt" <= "dueDate"
+      `.then((r) => Number(r[0]?.count ?? 0)),
+      this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*)::int as count FROM "Task"
+        WHERE "isDeleted" = false
+          AND "status" IN ('Completed', 'Archived')
+          AND "completedAt" IS NOT NULL
+          AND "completedAt" > "dueDate"
+      `.then((r) => Number(r[0]?.count ?? 0)),
+      this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*)::int as count FROM "Task"
+        WHERE "isDeleted" = false
+          AND "status" NOT IN ('Completed', 'Archived', 'Cancelled')
+          AND "dueDate" < NOW()
+      `.then((r) => Number(r[0]?.count ?? 0)),
     ]);
 
     return {
-      totalCompanies,
+      totalEmployees,
       totalUsers,
       activeTasks,
       recentRegistrations,
-      suspendedCompanies,
       totalDepartments,
-      totalTeams,
+      completedTasks,
+      completedOnTime,
+      completedLate,
+      overdueTasks,
     };
-  }
-
-  async listOrganizations(query: {
-    page?: number;
-    pageSize?: number;
-    search?: string;
-    status?: string;
-    sortBy?: string;
-    sortOrder?: string;
-  }) {
-    const {
-      page = 1,
-      pageSize = 25,
-      search,
-      status,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = query;
-    const skip = (page - 1) * pageSize;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { isDeleted: false };
-    if (search && search.length >= 2) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { slug: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-    if (status) {
-      where.status = status;
-    }
-
-    const [rows, total] = await Promise.all([
-      this.prisma.organization.findMany({
-        where,
-        skip,
-        take: pageSize,
-        orderBy: { [sortBy]: sortOrder },
-        include: { _count: { select: { users: true, tasks: true } } },
-      }),
-      this.prisma.organization.count({ where }),
-    ]);
-
-    return {
-      rows,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-        hasNext: page * pageSize < total,
-        hasPrevious: page > 1,
-      },
-    };
-  }
-
-  async createOrganization(data: {
-    name: string;
-    email?: string;
-    slug?: string;
-    maxUsers?: number;
-    maxStorageGb?: number;
-    subscriptionTier?: string;
-  }) {
-    const slug = data.slug || data.name.toLowerCase().replace(/\s+/g, '-');
-
-    const existing = await this.prisma.organization.findUnique({ where: { slug } });
-    if (existing) {
-      throw new BadRequestException('Organization with this slug already exists');
-    }
-
-    return this.prisma.organization.create({
-      data: {
-        name: data.name,
-        email: data.email,
-        slug,
-        maxUsers: data.maxUsers || 25,
-        maxStorageGb: data.maxStorageGb || 10,
-        subscriptionTier: data.subscriptionTier || 'free',
-      },
-    });
-  }
-
-  async getOrganization(id: string) {
-    const org = await this.prisma.organization.findFirst({
-      where: { id, isDeleted: false },
-      include: { _count: { select: { users: true, tasks: true, departments: true, teams: true } } },
-    });
-    if (!org) throw new NotFoundException('Organization not found');
-    return org;
-  }
-
-  async updateOrganization(
-    id: string,
-    data: {
-      name?: string;
-      email?: string;
-      maxUsers?: number;
-      maxStorageGb?: number;
-      subscriptionTier?: string;
-      status?: string;
-    },
-  ) {
-    await this.getOrganization(id);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = { ...data };
-    if (data.status) {
-      updateData.status = data.status as any;
-    }
-    return this.prisma.organization.update({ where: { id }, data: updateData });
-  }
-
-  async deleteOrganization(id: string) {
-    await this.getOrganization(id);
-    return this.prisma.organization.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date() },
-    });
-  }
-
-  async suspendOrganization(id: string) {
-    await this.getOrganization(id);
-    return this.prisma.organization.update({
-      where: { id },
-      data: { status: 'Suspended' },
-    });
   }
 
   async listUsers(query: {
     page?: number;
     pageSize?: number;
     search?: string;
-    organizationId?: string;
     role?: string;
     sortBy?: string;
     sortOrder?: string;
@@ -238,7 +136,6 @@ export class AdminService {
       page = 1,
       pageSize = 25,
       search,
-      organizationId,
       role,
       sortBy = 'createdAt',
       sortOrder = 'desc',
@@ -252,9 +149,6 @@ export class AdminService {
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
       ];
-    }
-    if (organizationId) {
-      where.organizationId = organizationId;
     }
     if (role) {
       where.role = role;
@@ -274,10 +168,8 @@ export class AdminService {
           userType: true,
           isActive: true,
           isVerified: true,
-          organizationId: true,
           createdAt: true,
           lastLogin: true,
-          organization: { select: { id: true, name: true } },
         },
       }),
       this.prisma.user.count({ where }),
@@ -302,7 +194,6 @@ export class AdminService {
     name?: string;
     role?: string;
     userType?: string;
-    organizationId?: string;
   }) {
     const existing = await this.prisma.user.findUnique({
       where: { email: data.email.toLowerCase() },
@@ -320,7 +211,6 @@ export class AdminService {
         password: passwordHash,
         role: (data.role as any) || 'EMPLOYEE',
         userType: (data.userType as any) || 'EMPLOYEE',
-        organizationId: data.organizationId,
         isActive: true,
         isVerified: true,
       },
@@ -330,7 +220,6 @@ export class AdminService {
         name: true,
         role: true,
         userType: true,
-        organizationId: true,
         createdAt: true,
       },
     });
@@ -347,10 +236,8 @@ export class AdminService {
         userType: true,
         isActive: true,
         isVerified: true,
-        organizationId: true,
         createdAt: true,
         lastLogin: true,
-        organization: { select: { id: true, name: true } },
       },
     });
     if (!user) throw new NotFoundException('User not found');
@@ -364,7 +251,6 @@ export class AdminService {
       role?: string;
       userType?: string;
       isActive?: boolean;
-      organizationId?: string;
     },
   ) {
     await this.getUser(id);
@@ -382,7 +268,6 @@ export class AdminService {
         role: true,
         userType: true,
         isActive: true,
-        organizationId: true,
         createdAt: true,
       },
     });
@@ -397,12 +282,85 @@ export class AdminService {
     return { id };
   }
 
+  async getReports() {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalTasks,
+      completedTasks,
+      activeEmployees,
+      tasksByStatus,
+      tasksByPriority,
+      topEmployees,
+    ] = await Promise.all([
+      this.prisma.task.count({ where: { isDeleted: false } }),
+      this.prisma.task.count({
+                where: { isDeleted: false, status: { in: ['Completed', 'Archived'] } },
+      }),
+      this.prisma.user.count({ where: { isActive: true, userType: 'EMPLOYEE' } }),
+      this.prisma.task.groupBy({
+        by: ['status'],
+        where: { isDeleted: false },
+        _count: true,
+      }),
+      this.prisma.task.groupBy({
+        by: ['priority'],
+        where: { isDeleted: false },
+        _count: true,
+      }),
+      this.prisma.user.findMany({
+        where: { isActive: true, userType: 'EMPLOYEE' },
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+          _count: {
+            select: {
+              assignedTasks: {
+        where: { isDeleted: false, status: { in: ['Completed', 'Archived'] } },
+              },
+            },
+          },
+        },
+        orderBy: { assignedTasks: { _count: 'desc' } },
+        take: 10,
+      }),
+    ]);
+
+    const tasksByStatusMap: Record<string, number> = {};
+    tasksByStatus.forEach((s: any) => { tasksByStatusMap[s.status] = s._count; });
+
+    const tasksByPriorityMap: Record<string, number> = {};
+    tasksByPriority.forEach((p: any) => { tasksByPriorityMap[p.priority] = p._count; });
+
+    const topEmployeesData = topEmployees.map((emp: any) => {
+      const completed = emp._count.assignedTasks;
+      const totalAssigned = completed;
+      return {
+        id: emp.id,
+        name: emp.name,
+        completedTasks: completed,
+        completionRate: totalAssigned > 0 ? Math.round((completed / totalAssigned) * 100) : 0,
+        isActive: emp.isActive,
+      };
+    });
+
+    return {
+      totalTasks,
+      completedTasks,
+      activeEmployees,
+      completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+      tasksByStatus: tasksByStatusMap,
+      tasksByPriority: tasksByPriorityMap,
+      topEmployees: topEmployeesData,
+    };
+  }
+
   async listAuditLogs(query: {
     page?: number;
     pageSize?: number;
     action?: string;
     userId?: string;
-    organizationId?: string;
     dateFrom?: string;
     dateTo?: string;
     sortBy?: string;
@@ -413,7 +371,6 @@ export class AdminService {
       pageSize = 25,
       action,
       userId,
-      organizationId,
       dateFrom,
       dateTo,
       sortBy = 'createdAt',
@@ -425,7 +382,6 @@ export class AdminService {
     const where: any = {};
     if (action) where.action = action;
     if (userId) where.userId = userId;
-    if (organizationId) where.organizationId = organizationId;
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);

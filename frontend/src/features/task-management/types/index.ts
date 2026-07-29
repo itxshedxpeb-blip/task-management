@@ -17,16 +17,13 @@ export type TaskPriority = 'None' | 'Low' | 'Medium' | 'High' | 'Urgent';
 // ─── Task Status ────────────────────────────────────────────────────────────────
 
 export type TaskStatus = 
+  | 'Draft'
   | 'Todo'
   | 'InProgress'
-  | 'Blocked'
-  | 'Review'
+  | 'OnHold'
   | 'Completed'
-  | 'Verified'
-  | 'Rejected'
-  | 'Closed'
-  | 'Cancelled'
-  | 'Reopened';
+  | 'Archived'
+  | 'Cancelled';
 
 // ─── Linked Module Types ─────────────────────────────────────────────────────────
 
@@ -102,6 +99,15 @@ export interface Task {
   assignedUserName: string;
   createdBy: string;
   createdByName: string;
+  assignedById?: string;
+  assignedByName?: string;
+  completedById?: string;
+  completedByName?: string;
+  verifiedById?: string;
+  updatedById?: string;
+  
+  // Parent/Child
+  parentTaskId?: string;
   
   // Dates
   startDate?: Date;
@@ -110,6 +116,8 @@ export interface Task {
   completedAt?: Date;
   verifiedAt?: Date;
   closedAt?: Date;
+  startedAt?: Date;
+  assignedAt?: Date;
   
   // Status & Priority
   priority: TaskPriority;
@@ -171,8 +179,21 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
   
-  // Tags
+  // Tags & Flags
   tags?: string[];
+  isPinned?: boolean;
+  isFavorite?: boolean;
+  
+  // SLA
+  slaDueDate?: Date;
+  slaBreached?: boolean;
+  
+  // Archive
+  isArchived?: boolean;
+  archivedAt?: Date;
+  
+  // Subtasks (minimal reference)
+  subtasks?: { id: string; title: string; status: TaskStatus }[];
 }
 
 // ─── Task Activity History (Audit Trail) ───────────────────────────────────────
@@ -182,25 +203,17 @@ export type TaskActivityType =
   | 'Assigned'
   | 'Started'
   | 'In Progress'
-  | 'Blocked'
-  | 'Unblocked'
-  | 'Review'
-  | 'Photos Uploaded'
+  | 'On Hold'
   | 'Completed'
-  | 'Verified'
-  | 'Rejected'
-  | 'Closed'
+  | 'Archived'
   | 'Cancelled'
-  | 'Reopened'
   | 'Reassigned'
   | 'Priority Changed'
   | 'Due Date Changed'
   | 'Progress Updated'
   | 'Checklist Updated'
   | 'Comment Added'
-  | 'Attachment Added'
-  | 'Before Images Added'
-  | 'After Images Added';
+  | 'Attachment Added';
 
 export interface TaskActivity {
   id: string;
@@ -217,8 +230,6 @@ export interface TaskActivity {
 
 export type NotificationType =
   | 'Task Assigned'
-  | 'Task Verified'
-  | 'Task Rejected'
   | 'Task Completed'
   | 'Task Due Soon'
   | 'Task Overdue';
@@ -247,13 +258,11 @@ export interface EmployeePerformanceStats {
   tasksCompleted: number;
   tasksPending: number;
   tasksOverdue: number;
-  tasksVerified: number;
-  tasksRejected: number;
   
   // Performance Metrics
-  completionRate: number; // percentage
-  onTimeCompletionRate: number; // percentage
-  averageCompletionTime: number; // in days
+  completionRate: number;
+  onTimeCompletionRate: number;
+  averageCompletionTime: number;
   
   // Financial (Incentive-based)
   baseSalary: number; // Monthly base salary
@@ -484,35 +493,34 @@ export interface SalaryAdjustmentQuery {
 
 export interface TaskStats {
   totalTasks: number;
-  openTasks: number;
+  draftTasks: number;
+  todoTasks: number;
   inProgressTasks: number;
+  onHoldTasks: number;
   completedTasks: number;
-  verifiedTasks: number;
-  closedTasks: number;
+  archivedTasks: number;
   cancelledTasks: number;
   
   overdueTasks: number;
   dueToday: number;
   dueThisWeek: number;
   
+  completedOnTime: number;
+  completedLate: number;
+  
   tasksByPriority: Record<TaskPriority, number>;
   tasksByStatus: Record<TaskStatus, number>;
-  tasksByModule: Record<LinkedModule, number>;
   
-  pendingVerification: number;
   completedToday: number;
-  
-  totalPaymentValue: number;
-  paymentPending: number;
-  paymentProcessed: number;
 }
 
 export interface DashboardTaskKPIs {
   openTasks: number;
   overdueTasks: number;
   completedToday: number;
-  pendingVerification: number;
-  verifiedToday: number;
+  completedTasks: number;
+  completedOnTime: number;
+  completedLate: number;
   topPerformers: EmployeePerformanceStats[];
 }
 

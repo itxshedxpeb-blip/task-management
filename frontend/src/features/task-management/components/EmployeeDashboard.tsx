@@ -84,7 +84,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
 
     const inProgress = myTasks.filter(task => task.status === 'InProgress');
     const completed = myTasks.filter(task => task.status === 'Completed');
-    const blocked = myTasks.filter(task => task.status === 'Blocked');
+    const blocked = myTasks.filter(task => task.status === 'OnHold');
 
     const completedToday = myTasks.filter(task => {
       const completedAt = task.completedAt ? new Date(task.completedAt) : null;
@@ -163,19 +163,9 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'Todo':
         return 'bg-gray-100 text-gray-800 border-gray-300';
-      case 'Blocked':
+      case 'OnHold':
         return 'bg-red-100 text-red-800 border-red-300';
-      case 'Review':
-        return 'bg-purple-100 text-purple-800 border-purple-300';
       case 'Cancelled':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-      case 'Reopened':
-        return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'Verified':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'Rejected':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'Closed':
         return 'bg-gray-100 text-gray-800 border-gray-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
@@ -241,7 +231,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
         <div>
           <h2 className="text-2xl font-bold">Welcome back, {currentUserName}!</h2>
           <p className="text-muted-foreground">
-            Here's your task overview for today
+            Here&apos;s your task overview for today
           </p>
         </div>
         <Button onClick={onCreateTask}>
@@ -495,7 +485,7 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
           {/* Today's Summary */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-semibold">Today's Summary</CardTitle>
+              <CardTitle className="text-base font-semibold">Today&apos;s Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">

@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { dayjs } from '@/lib/date-utils';
 import { ImageUpload } from './ImageUpload';
 import { TaskChecklist } from './TaskChecklist';
 import { CompleteTaskDto, ChecklistItem } from '../types';
@@ -52,7 +53,7 @@ export const CompleteTaskDialog: React.FC<CompleteTaskDialogProps> = ({
       completionNotes: completionNotes.trim(),
       completionChecklist,
       timeSpent,
-      completedAt: new Date(),
+      completedAt: dayjs().toDate(),
     };
 
     onSubmit(data);

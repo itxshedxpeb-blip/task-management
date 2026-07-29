@@ -1,21 +1,18 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getAccessToken, setAccessToken, setSessionData, clearSession, getTenantId } from '@/core/auth/session';
-import { assertEndpointAvailable, rememberUnavailableEndpoint } from './capabilities';
+import { getAccessToken, setAccessToken, setSessionData, clearSession } from '@/core/auth/session';
+import { config, getApiBaseUrl } from '@/lib/config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = getApiBaseUrl();
 
-if (!API_BASE_URL) {
-  throw new Error('Missing required environment variable: NEXT_PUBLIC_API_URL');
-}
+const isBrowser = typeof window !== 'undefined';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: config.apiTimeout,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
 
-// --- Refresh Token Queue ---
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -33,7 +30,6 @@ function processQueue(error: any, token: string | null = null) {
   failedQueue = [];
 }
 
-/** Single-flight refresh — AuthContext + axios 401 handler must not rotate in parallel. */
 let refreshInFlight: Promise<string> | null = null;
 
 export async function silentRefresh(): Promise<string> {
@@ -50,7 +46,7 @@ export async function silentRefresh(): Promise<string> {
     if (!accessToken) throw new Error('No access token in refresh response');
     setAccessToken(accessToken);
     if (responseData.sessionId) {
-      setSessionData(responseData.sessionId, getTenantId() || '');
+      setSessionData(responseData.sessionId, '');
     }
     return accessToken;
   })().finally(() => {
@@ -60,38 +56,26 @@ export async function silentRefresh(): Promise<string> {
   return refreshInFlight;
 }
 
-// Request interceptor - attach access token
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    await assertEndpointAvailable(config);
     const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    }
-    const tenantId = getTenantId();
-    if (tenantId) {
-      config.headers['X-Tenant-ID'] = tenantId;
     }
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-// Response interceptor - handle 401 with refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 404 && originalRequest?.url) {
-      rememberUnavailableEndpoint(originalRequest.url);
-    }
-
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }
 
-    // Never retry refresh on auth endpoints — they 401 for valid business reasons
     const url = originalRequest.url || '';
     if (url.includes('/auth/')) {
       return Promise.reject(error);
@@ -135,7 +119,6 @@ apiClient.interceptors.response.use(
   },
 );
 
-// Typed API methods - unwrap response.data
 export const api = {
   get: <T>(url: string, config?: AxiosRequestConfig) =>
     apiClient.get<T>(url, config).then(res => res.data),

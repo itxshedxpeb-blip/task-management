@@ -6,12 +6,12 @@ import { CreateLabelDto } from './dto/create-label.dto';
 export class LabelService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(organizationId: string, query: { page?: number; pageSize?: number; search?: string }) {
+  async findAll(query: { page?: number; pageSize?: number; search?: string }) {
     const { page = 1, pageSize = 25, search } = query;
     const skip = (page - 1) * pageSize;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { organizationId };
+    const where: any = {};
     if (search && search.length >= 2) {
       where.name = { contains: search, mode: 'insensitive' };
     }
@@ -40,9 +40,9 @@ export class LabelService {
     };
   }
 
-  async create(dto: CreateLabelDto, organizationId: string) {
+  async create(dto: CreateLabelDto) {
     const existing = await this.prisma.label.findFirst({
-      where: { organizationId, name: dto.name },
+      where: { name: dto.name },
     });
     if (existing) {
       throw new BadRequestException('A label with this name already exists');
@@ -50,22 +50,19 @@ export class LabelService {
 
     return this.prisma.label.create({
       data: {
-        organizationId,
         name: dto.name,
         color: dto.color || '#3ABEFF',
       },
     });
   }
 
-  async update(id: string, dto: Partial<CreateLabelDto>, organizationId: string) {
-    const label = await this.prisma.label.findFirst({
-      where: { id, organizationId },
-    });
+  async update(id: string, dto: Partial<CreateLabelDto>) {
+    const label = await this.prisma.label.findFirst({ where: { id } });
     if (!label) throw new NotFoundException('Label not found');
 
     if (dto.name && dto.name !== label.name) {
       const existing = await this.prisma.label.findFirst({
-        where: { organizationId, name: dto.name, id: { not: id } },
+        where: { name: dto.name, id: { not: id } },
       });
       if (existing) {
         throw new BadRequestException('A label with this name already exists');
@@ -74,30 +71,24 @@ export class LabelService {
 
     return this.prisma.label.update({
       where: { id },
-      data: {
-        name: dto.name,
-        color: dto.color,
-      },
+      data: { name: dto.name, color: dto.color },
     });
   }
 
-  async delete(id: string, organizationId: string) {
-    const label = await this.prisma.label.findFirst({
-      where: { id, organizationId },
-    });
+  async delete(id: string) {
+    const label = await this.prisma.label.findFirst({ where: { id } });
     if (!label) throw new NotFoundException('Label not found');
-
     return this.prisma.label.delete({ where: { id } });
   }
 
-  async assignToTask(taskId: string, labelIds: string[], organizationId: string) {
+  async assignToTask(taskId: string, labelIds: string[]) {
     const task = await this.prisma.task.findFirst({
-      where: { id: taskId, organizationId, isDeleted: false },
+      where: { id: taskId, isDeleted: false },
     });
     if (!task) throw new NotFoundException('Task not found');
 
     const labels = await this.prisma.label.findMany({
-      where: { id: { in: labelIds }, organizationId },
+      where: { id: { in: labelIds } },
     });
     if (labels.length !== labelIds.length) {
       throw new NotFoundException('One or more labels not found');
@@ -115,16 +106,15 @@ export class LabelService {
       });
     }
 
-    const result = await this.prisma.taskLabel.findMany({
+    return this.prisma.taskLabel.findMany({
       where: { taskId },
       include: { label: true },
     });
-    return result;
   }
 
-  async removeFromTask(taskId: string, labelId: string, organizationId: string) {
+  async removeFromTask(taskId: string, labelId: string) {
     const task = await this.prisma.task.findFirst({
-      where: { id: taskId, organizationId, isDeleted: false },
+      where: { id: taskId, isDeleted: false },
     });
     if (!task) throw new NotFoundException('Task not found');
 

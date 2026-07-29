@@ -11,16 +11,13 @@ import {
 import { Type } from 'class-transformer';
 
 export enum TaskStatusFilter {
+  Draft = 'Draft',
   Todo = 'Todo',
   InProgress = 'InProgress',
-  Blocked = 'Blocked',
-  Review = 'Review',
+  OnHold = 'OnHold',
   Completed = 'Completed',
-  Verified = 'Verified',
-  Rejected = 'Rejected',
-  Closed = 'Closed',
+  Archived = 'Archived',
   Cancelled = 'Cancelled',
-  Reopened = 'Reopened',
 }
 
 export enum TaskPriorityFilter {

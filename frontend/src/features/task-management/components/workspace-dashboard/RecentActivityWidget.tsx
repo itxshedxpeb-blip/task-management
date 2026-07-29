@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/states/EmptyState';
 import { cn } from '@/lib/utils';
+import { dayjs } from '@/lib/date-utils';
 import { Avatar } from '../shared';
 import { formatRelativeDate } from '../../utils';
 import type { Task } from '../../types';
@@ -39,11 +40,11 @@ export function RecentActivityWidget({ tasks, loading = false, max = 10, classNa
           description: activity.description,
           performedByName: activity.performedByName,
           taskTitle: task.title,
-          timestamp: new Date(activity.timestamp),
+          timestamp: dayjs(activity.timestamp).toDate(),
         });
       }
     }
-    all.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    all.sort((a, b) => dayjs(b.timestamp).valueOf() - dayjs(a.timestamp).valueOf());
     return all.slice(0, max);
   }, [tasks, max]);
 

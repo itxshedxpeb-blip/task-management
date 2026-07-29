@@ -25,6 +25,7 @@ import { KPICard } from '@/components/dashboard/KPICard';
 import { ErrorState } from '@/components/states/ErrorState';
 import { Breadcrumbs } from '@/layouts/Breadcrumbs';
 import type { KPICard as KPICardType } from '@/types';
+import { dayjs } from '@/lib/date-utils';
 import { useTasks, useTaskStats } from '../../hooks/useTaskManagement';
 import type { Task, TaskPriority } from '../../types';
 import { DashboardTaskListWidget } from './DashboardTaskListWidget';
@@ -53,7 +54,7 @@ const PRIORITY_WEIGHT: Record<TaskPriority, number> = {
   None: 4,
 };
 
-const ACTIVE_LIST_STATUSES = new Set(['Completed', 'Cancelled']);
+const ACTIVE_LIST_STATUSES = new Set(['Completed', 'Cancelled', 'Archived']);
 
 export function TaskDashboardWorkspace() {
   const router = useRouter();
@@ -93,13 +94,13 @@ export function TaskDashboardWorkspace() {
         .sort((a, b) => {
           const weight = PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
           if (weight !== 0) return weight;
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          return dayjs(a.dueDate).valueOf() - dayjs(b.dueDate).valueOf();
         }),
     [allTasks]
   );
 
   const pendingVerification = useMemo(
-    () => allTasks.filter((t) => t.status === 'Review'),
+    () => allTasks.filter((t) => t.status === 'InProgress'),
     [allTasks]
   );
 
@@ -107,7 +108,7 @@ export function TaskDashboardWorkspace() {
     () => [
       {
         title: 'Open Tasks',
-        value: stats?.openTasks ?? 0,
+        value: stats?.todoTasks ?? 0,
         change: 0,
         icon: <CheckSquare className="h-full w-full" />,
         color: 'text-blue-600',
@@ -127,8 +128,8 @@ export function TaskDashboardWorkspace() {
         color: 'text-green-600',
       },
       {
-        title: 'Pending Verification',
-        value: stats?.pendingVerification ?? 0,
+        title: 'On Hold',
+        value: stats?.onHoldTasks ?? 0,
         change: 0,
         icon: <Clock className="h-full w-full" />,
         color: 'text-amber-600',

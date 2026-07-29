@@ -29,9 +29,8 @@ export function SearchBar({
     onChange(debouncedValue)
   }, [debouncedValue, onChange])
 
-  React.useEffect(() => {
-    setLocalValue(value)
-  }, [value])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  React.useEffect(() => { setLocalValue(value) }, [value])
 
   return (
     <div className={cn("relative", className)}>

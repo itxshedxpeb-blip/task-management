@@ -5,12 +5,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class NotificationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(userId: string, organizationId: string, query: { page?: number; pageSize?: number; isRead?: string }) {
+  async findAll(userId: string, query: { page?: number; pageSize?: number; isRead?: string }) {
     const { page = 1, pageSize = 25, isRead } = query;
     const skip = (page - 1) * pageSize;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { userId, organizationId };
+    const where: any = { userId };
     if (isRead !== undefined) {
       where.isRead = isRead === 'true';
     }
@@ -38,9 +38,9 @@ export class NotificationService {
     };
   }
 
-  async getUnreadCount(userId: string, organizationId: string) {
+  async getUnreadCount(userId: string) {
     const count = await this.prisma.notification.count({
-      where: { userId, organizationId, isRead: false },
+      where: { userId, isRead: false },
     });
     return { count };
   }
@@ -57,9 +57,9 @@ export class NotificationService {
     });
   }
 
-  async markAllAsRead(userId: string, organizationId: string) {
+  async markAllAsRead(userId: string) {
     const result = await this.prisma.notification.updateMany({
-      where: { userId, organizationId, isRead: false },
+      where: { userId, isRead: false },
       data: { isRead: true, readAt: new Date() },
     });
     return { updated: result.count };

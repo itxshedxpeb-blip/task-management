@@ -97,6 +97,11 @@ export const taskManagementApi = guardModuleApi('task', {
     return res.data;
   },
 
+  async getMyStats(): Promise<TaskStats> {
+    const res = await api.get<BackendResponse<TaskStats>>('/tasks/my-stats');
+    return res.data;
+  },
+
   async getDashboardKPIs(): Promise<DashboardTaskKPIs> {
     const res = await api.get<BackendResponse<DashboardTaskKPIs>>('/tasks/dashboard-kpis');
     return res.data;

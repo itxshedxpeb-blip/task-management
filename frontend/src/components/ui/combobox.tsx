@@ -55,10 +55,8 @@ export function Combobox({
     )
   }, [options, searchQuery])
 
-  // Reset highlighted index when filtered options change
-  React.useEffect(() => {
-    setHighlightedIndex(-1)
-  }, [filteredOptions])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  React.useEffect(() => { setHighlightedIndex(-1) }, [filteredOptions])
 
   // Focus search input when dropdown opens
   React.useEffect(() => {
@@ -67,13 +65,8 @@ export function Combobox({
     }
   }, [open])
 
-  // Clear search when dropdown closes
-  React.useEffect(() => {
-    if (!open) {
-      setSearchQuery("")
-      setHighlightedIndex(-1)
-    }
-  }, [open])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  React.useEffect(() => { if (!open) { setSearchQuery(""); setHighlightedIndex(-1) } }, [open])
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {

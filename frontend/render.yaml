@@ -1,0 +1,14 @@
+# Render Blueprint - Frontend Web
+services:
+  - type: web
+    name: peb-crm-web
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_URL
+        sync: false

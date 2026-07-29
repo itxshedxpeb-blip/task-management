@@ -1,43 +1,47 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from '@next/bundle-analyzer';
+import withPWA from 'next-pwa';
+import { config } from './src/lib/config';
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
-const backendUrl = process.env.BACKEND_URL;
-
-if (!backendUrl) {
-  throw new Error('Missing required environment variable: BACKEND_URL');
-}
-
-const imageHostname = process.env.IMAGE_HOSTNAME || 'localhost';
-const imageProtocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  experimental: {
-    optimizePackageImports: ['lucide-react', 'recharts'],
-  },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
+  trailingSlash: true,
+  allowedDevOrigins: ['10.0.2.2', '10.0.3.2'],
   images: {
     remotePatterns: [
       {
-        protocol: imageProtocol,
-        hostname: imageHostname,
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '10.0.2.2',
       },
     ],
+  },
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts'],
   },
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: `${backendUrl}/:path*`,
+        destination: 'http://127.0.0.1:8000/:path*',
       },
     ];
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+const pwaConfig = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: config.environment === 'development',
+});
+
+// @ts-ignore
+export default withBundleAnalyzer(pwaConfig(nextConfig));

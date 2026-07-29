@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Task, TaskStatus, TaskPriority } from '../types';
 import { cn } from '@/lib/utils';
+import { isPast, dayjs } from '@/lib/date-utils';
 import {
   Users,
   CheckCircle,
@@ -69,21 +70,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const completedTasks = tasks.filter(t => t.status === 'Completed').length;
     const inProgressTasks = tasks.filter(t => t.status === 'InProgress').length;
     const overdueTasks = tasks.filter(t => {
-      const dueDate = new Date(t.dueDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate.getTime() < today.getTime() && t.status !== 'Completed';
+      return isPast(t.dueDate) && t.status !== 'Completed';
     }).length;
-    const blockedTasks = tasks.filter(t => t.status === 'Blocked').length;
+    const onHoldTasks = tasks.filter(t => t.status === 'OnHold').length;
 
     // Status distribution
     const statusDistribution = [
       { name: 'Todo', value: tasks.filter(t => t.status === 'Todo').length, color: COLORS.gray },
-      { name: 'In Progress', value: tasks.filter(t => t.status === 'InProgress').length, color: COLORS.blue },
-      { name: 'Review', value: tasks.filter(t => t.status === 'Review').length, color: COLORS.purple },
+      { name: 'InProgress', value: tasks.filter(t => t.status === 'InProgress').length, color: COLORS.blue },
+      { name: 'OnHold', value: tasks.filter(t => t.status === 'OnHold').length, color: COLORS.red },
       { name: 'Completed', value: tasks.filter(t => t.status === 'Completed').length, color: COLORS.green },
-      { name: 'Blocked', value: tasks.filter(t => t.status === 'Blocked').length, color: COLORS.red },
+      { name: 'Archived', value: tasks.filter(t => t.status === 'Archived').length, color: COLORS.gray },
       { name: 'Cancelled', value: tasks.filter(t => t.status === 'Cancelled').length, color: COLORS.gray },
     ].filter(item => item.value > 0);
 
@@ -159,7 +156,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       completedTasks,
       inProgressTasks,
       overdueTasks,
-      blockedTasks,
+      onHoldTasks,
       statusDistribution,
       priorityDistribution,
       employeeWorkload,
@@ -232,8 +229,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         />
         <KPICard
           data={{
-            title: 'Blocked',
-            value: adminData.blockedTasks.toString(),
+            title: 'On Hold',
+            value: adminData.onHoldTasks.toString(),
             change: 0,
             color: 'text-orange-600',
             icon: <Clock className="h-5 w-5" />,

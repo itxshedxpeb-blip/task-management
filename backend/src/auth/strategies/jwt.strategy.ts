@@ -9,7 +9,6 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
-  organizationId?: string;
   sessionId: string;
   permissionVersion: number;
   tokenVersion: number;
@@ -39,8 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         name: true,
         role: true,
-        organizationType: true,
-        organizationId: true,
+        userType: true,
         isActive: true,
         isVerified: true,
         isLocked: true,
@@ -55,7 +53,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (user.isLocked) {
       throw new UnauthorizedException('Account has been locked');
     }
-    // Temporary lockout (failed login protection)
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       throw new UnauthorizedException('Account is temporarily locked. Try again later.');
     }
@@ -79,8 +76,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       name: user.name,
       role: user.role,
-      organizationType: user.organizationType,
-      organizationId: user.organizationId || payload.organizationId,
+      userType: user.userType,
       sessionId: payload.sessionId,
     };
   }

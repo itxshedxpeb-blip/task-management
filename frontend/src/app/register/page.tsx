@@ -1,159 +1,127 @@
 'use client';
-import { useEffect, useState, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+
+import { useState } from 'react';
 import Link from 'next/link';
-import { ROUTES } from '@/core/routes';
+import { Eye, EyeOff, LayoutGrid } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/features/auth/AuthContext';
-import { registerSchema, verifyOtpSchema, RegisterInput } from '@/features/auth/validations';
-import { FormInput } from '@/components/form/FormInput';
-import { useOtpRecovery } from '@/features/auth/useOtpRecovery';
-import { OtpResendButton } from '@/features/auth/OtpResendButton';
+import { ROUTES } from '@/core/routes';
 
-function RegisterForm() {
-  const { register: registerUser, verifyOtp, resendOtp } = useAuth();
-  const [step, setStep] = useState<'register' | 'otp'>('register');
+export default function RegisterPage() {
+  const { register } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [apiError, setApiError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const { state: otpState, persist, clear, resendSeconds, isExpired } = useOtpRecovery();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (otpState?.purpose === 'REGISTRATION') {
-      setEmail(otpState.email);
-      setStep('otp');
-    }
-  }, [otpState]);
-
-  const registerForm = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { email: '', name: '', companyName: '', password: '', confirmPassword: '' },
-  });
-
-  const otpForm = useForm({ resolver: zodResolver(verifyOtpSchema), defaultValues: { otp: '' } });
-
-  const onRegister = async (formData: RegisterInput) => {
-    setSubmitting(true);
-    setApiError('');
-    const result = await registerUser(formData);
-    setSubmitting(false);
-    if (result.success) {
-      setEmail(result.email || formData.email);
-      if (result.otpDelivery) persist(result.otpDelivery, 'REGISTRATION');
-      setStep('otp');
-    } else {
-      setApiError(result.error || 'Registration failed');
-    }
-  };
-
-  const onVerifyOtp = async (data: { otp: string }) => {
-    if (isExpired) {
-      setApiError('OTP has expired. Please request a new one.');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
-    setSubmitting(true);
-    setApiError('');
-    const result = await verifyOtp({ email, otp: data.otp });
-    setSubmitting(false);
+    setLoading(true);
+    const result = await register({ email, password, confirmPassword, name });
+    setLoading(false);
     if (!result.success) {
-      setApiError(result.error || 'Verification failed');
-      return;
+      setError(result.error || 'Registration failed');
     }
-    clear();
-  };
-
-  const onResend = async () => {
-    if (resendSeconds > 0 || submitting) return;
-    setSubmitting(true);
-    setApiError('');
-    const result = await resendOtp(email, 'REGISTRATION');
-    setSubmitting(false);
-    if (!result.success) {
-      setApiError(result.error || "We couldn't send the verification code. Please try again.");
-      return;
-    }
-    if (result.otpDelivery) persist(result.otpDelivery, 'REGISTRATION');
-    otpForm.reset({ otp: '' });
-    otpForm.clearErrors();
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">TaskFlow</h2>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            {step === 'register' ? 'Create your account' : 'Verify your email'}
-          </p>
+      <div className="w-full max-w-sm space-y-6">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
+            <LayoutGrid className="w-6 h-6 text-primary-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">TaskFlow</h1>
+          <p className="text-sm text-muted-foreground mt-1">Create your account</p>
         </div>
 
-        {step === 'register' ? (
-          <form onSubmit={registerForm.handleSubmit(onRegister)} className="mt-8 space-y-4" noValidate>
-            <FormInput label="Full Name" type="text" placeholder="John Doe" autoComplete="name"
-              registration={registerForm.register('name')} error={registerForm.formState.errors.name?.message as string}
-              disabled={submitting} />
-            <FormInput label="Company Name" type="text" placeholder="Acme Corp" autoComplete="organization"
-              registration={registerForm.register('companyName')} error={registerForm.formState.errors.companyName?.message as string}
-              disabled={submitting} />
-            <FormInput label="Email" type="email" placeholder="you@example.com" autoComplete="email"
-              registration={registerForm.register('email')} error={registerForm.formState.errors.email?.message as string}
-              required disabled={submitting} />
-            <FormInput label="Password" type="password" placeholder="Min 8 chars, upper+lower+number" autoComplete="new-password"
-              registration={registerForm.register('password')} error={registerForm.formState.errors.password?.message as string}
-              required disabled={submitting} />
-            <FormInput label="Confirm Password" type="password" placeholder="Re-enter password" autoComplete="new-password"
-              registration={registerForm.register('confirmPassword')} error={registerForm.formState.errors.confirmPassword?.message as string}
-              required disabled={submitting} />
-            {apiError && (<div className="rounded-md bg-destructive/10 p-3"><p className="text-sm text-destructive">{apiError}</p></div>)}
-            <button type="submit" disabled={submitting}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
-              {submitting ? 'Creating account...' : 'Create Account'}
-            </button>
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{' '}<Link href={ROUTES.login} className="font-medium text-primary">Sign in</Link>
-            </p>
-          </form>
-        ) : (
-          <form onSubmit={otpForm.handleSubmit(onVerifyOtp)} className="mt-8 space-y-4" noValidate>
-            <p className="text-sm text-muted-foreground text-center">We sent a 6-digit code to <strong className="text-foreground">{email}</strong></p>
-            {isExpired && (
-              <p className="rounded-md bg-amber-500/10 p-3 text-center text-sm text-amber-500">
-                OTP has expired. Please request a new one.
-              </p>
-            )}
-            <FormInput
-              label="OTP Code"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
               type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="Enter 6-digit OTP"
-              maxLength={6}
-              registration={otpForm.register('otp', {
-                setValueAs: (v) => String(v ?? '').replace(/\D/g, '').slice(0, 6),
-              })}
-              error={otpForm.formState.errors.otp?.message as string}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your full name"
               required
-              disabled={submitting || isExpired}
+              autoFocus
             />
-            {apiError && (<div className="rounded-md bg-destructive/10 p-3"><p className="text-sm text-destructive">{apiError}</p></div>)}
-            <button
-              type="submit"
-              disabled={submitting || isExpired}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Verifying...' : 'Verify Email'}
-            </button>
-            <p className="text-center text-sm text-muted-foreground">
-              Didn&apos;t receive the code?{' '}
-              <OtpResendButton resendSeconds={resendSeconds} disabled={submitting} onResend={onResend} />
-            </p>
-          </form>
-        )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min. 8 chars, upper + lower + number + special"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              required
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? 'Creating account...' : 'Create Account'}
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href={ROUTES.login} className="font-medium text-primary hover:opacity-80">
+              Sign in
+            </Link>
+          </p>
+        </form>
       </div>
     </div>
   );
-}
-
-export default function RegisterPage() {
-  return (<Suspense><RegisterForm /></Suspense>);
 }

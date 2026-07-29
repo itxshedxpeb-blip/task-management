@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Task } from '../types';
 import { cn } from '@/lib/utils';
+import { formatDate, dayjs } from '@/lib/date-utils';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
 type CalendarView = 'month' | 'week' | 'day' | 'timeline';
@@ -23,12 +24,12 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
   // never opens on an empty month when tasks exist elsewhere on the timeline.
   const [currentDate, setCurrentDate] = useState<Date>(() => {
     if (!tasks || tasks.length === 0) return new Date();
-    const now = new Date().getTime();
-    let nearest = new Date(tasks[0].dueDate);
-    let nearestDiff = Math.abs(nearest.getTime() - now);
+    const now = dayjs().valueOf();
+    let nearest = dayjs(tasks[0].dueDate).toDate();
+    let nearestDiff = Math.abs(dayjs(nearest).valueOf() - now);
     for (const t of tasks) {
-      const d = new Date(t.dueDate);
-      const diff = Math.abs(d.getTime() - now);
+      const d = dayjs(t.dueDate).toDate();
+      const diff = Math.abs(dayjs(d).valueOf() - now);
       if (diff < nearestDiff) {
         nearest = d;
         nearestDiff = diff;
@@ -197,10 +198,10 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
         >
           <div className="mb-3">
             <div className="text-sm font-semibold mb-1 text-slate-700">
-              {date.toLocaleDateString('en-US', { weekday: 'short' })}
+              {dayjs(date).format('ddd')}
             </div>
             <div className={cn('text-2xl font-bold', isToday ? 'text-blue-600' : 'text-slate-800')}>
-              {date.getDate()}
+              {dayjs(date).date()}
             </div>
           </div>
           <div className="space-y-2">
@@ -245,13 +246,13 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
           getPriorityGradient(dayTasks[0]?.priority || 'Low')
         )}>
           <div className="text-sm text-slate-600 font-medium">
-            {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}
+            {dayjs(currentDate).format('dddd')}
           </div>
           <div className={cn('text-5xl font-bold mt-2', isToday ? 'text-blue-600' : 'text-slate-800')}>
-            {currentDate.getDate()}
+            {dayjs(currentDate).date()}
           </div>
           <div className="text-sm text-slate-600 mt-1">
-            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            {dayjs(currentDate).format('MMMM YYYY')}
           </div>
         </div>
 
@@ -325,7 +326,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
                     <div className="flex items-center gap-2 mb-2">
                       <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground font-medium">
-                        {new Date(task.dueDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        {formatDate(task.dueDate)}
                       </span>
                     </div>
                     <h3 className="font-semibold mb-2 text-gray-800">{task.title}</h3>
@@ -358,7 +359,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-sm font-semibold sm:text-base">
-            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            {dayjs(currentDate).format('MMMM YYYY')}
           </h2>
           <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => navigateDate('next')}>
             <ChevronRight className="h-4 w-4" />

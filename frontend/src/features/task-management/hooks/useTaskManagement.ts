@@ -5,6 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskManagementApi } from '../services/taskManagementApi';
+import { api } from '@/core/api';
 import {
   Task,
   EmployeePerformanceStats,
@@ -54,6 +55,15 @@ export function useTaskStats() {
   });
 }
 
+export function useMyTaskStats() {
+  return useQuery({
+    queryKey: ['my-task-stats'],
+    queryFn: () => taskManagementApi.getMyStats(),
+    staleTime: 10 * 60 * 1000,
+    refetchOnMount: false,
+  });
+}
+
 export function useDashboardTaskKPIs() {
   return useQuery({
     queryKey: ['dashboard-task-kpis'],
@@ -71,6 +81,7 @@ export function useCreateTask() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['my-task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-task-kpis'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
@@ -87,6 +98,7 @@ export function useUpdateTask() {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['task-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['my-task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -100,6 +112,7 @@ export function useDeleteTask() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['my-task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
@@ -263,21 +276,27 @@ export function useProcessSalaryAdjustment() {
 
 // ─── Notification Hooks ───────────────────────────────────────────────────────
 
-// Mock notification storage (in production, this would be a real notification service)
-const mockNotifications: TaskNotification[] = [];
-
 export function useNotifications(userId?: string) {
   return useQuery({
     queryKey: ['notifications', userId],
     queryFn: async () => {
-      // In production, this would fetch from a real notification API
-      await new Promise(resolve => setTimeout(resolve, 200));
-      return userId 
-        ? mockNotifications.filter(n => n.userId === userId)
-        : mockNotifications;
+      const res = await api.get<any>('/notifications', { params: { pageSize: 50 } });
+      return res.data?.rows || [];
     },
-    staleTime: 1 * 60 * 1000, // 1 minute
-    refetchOnMount: false,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+  });
+}
+
+export function useUnreadNotificationCount() {
+  return useQuery({
+    queryKey: ['notifications-unread-count'],
+    queryFn: async () => {
+      const res = await api.get<any>('/notifications/unread-count');
+      return res.data?.count || 0;
+    },
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
   });
 }
 
@@ -286,16 +305,12 @@ export function useMarkNotificationAsRead() {
   
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      // In production, this would call a real API
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const notification = mockNotifications.find(n => n.id === notificationId);
-      if (notification) {
-        notification.isRead = true;
-      }
-      return notification;
+      const res = await api.patch<any>(`/notifications/${notificationId}/read`);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     },
   });
 }
@@ -304,42 +319,13 @@ export function useMarkAllNotificationsAsRead() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (userId: string) => {
-      // In production, this would call a real API
-      await new Promise(resolve => setTimeout(resolve, 100));
-      mockNotifications.forEach(n => {
-        if (n.userId === userId) {
-          n.isRead = true;
-        }
-      });
-      return true;
+    mutationFn: async () => {
+      const res = await api.post<any>('/notifications/read-all');
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     },
   });
-}
-
-// Helper function to create notifications (called by task mutations)
-export function createTaskNotification(
-  userId: string,
-  type: 'Task Assigned' | 'Task Verified' | 'Task Rejected' | 'Task Completed',
-  taskId: string,
-  taskTitle: string,
-  message: string
-): TaskNotification {
-  const notification: TaskNotification = {
-    id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    userId,
-    type,
-    title: type,
-    message,
-    taskId,
-    taskTitle,
-    isRead: false,
-    createdAt: new Date(),
-  };
-  
-  mockNotifications.push(notification);
-  return notification;
 }

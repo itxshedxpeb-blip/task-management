@@ -6,12 +6,12 @@ import { CreateAutomationDto } from './dto/create-automation.dto';
 export class AutomationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(organizationId: string, query: { page?: number; pageSize?: number; search?: string }) {
+  async findAll(query: { page?: number; pageSize?: number; search?: string }) {
     const { page = 1, pageSize = 25, search } = query;
     const skip = (page - 1) * pageSize;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { organizationId };
+    const where: any = {};
     if (search && search.length >= 2) {
       where.name = { contains: search, mode: 'insensitive' };
     }
@@ -39,18 +39,15 @@ export class AutomationService {
     };
   }
 
-  async findById(id: string, organizationId: string) {
-    const rule = await this.prisma.automationRule.findFirst({
-      where: { id, organizationId },
-    });
+  async findById(id: string) {
+    const rule = await this.prisma.automationRule.findFirst({ where: { id } });
     if (!rule) throw new NotFoundException('Automation rule not found');
     return rule;
   }
 
-  async create(dto: CreateAutomationDto, organizationId: string) {
+  async create(dto: CreateAutomationDto) {
     return this.prisma.automationRule.create({
       data: {
-        organizationId,
         name: dto.name,
         trigger: dto.trigger,
         conditions: dto.conditions,
@@ -60,9 +57,8 @@ export class AutomationService {
     });
   }
 
-  async update(id: string, dto: Partial<CreateAutomationDto>, organizationId: string) {
-    await this.findById(id, organizationId);
-
+  async update(id: string, dto: Partial<CreateAutomationDto>) {
+    await this.findById(id);
     return this.prisma.automationRule.update({
       where: { id },
       data: {
@@ -75,14 +71,13 @@ export class AutomationService {
     });
   }
 
-  async delete(id: string, organizationId: string) {
-    await this.findById(id, organizationId);
+  async delete(id: string) {
+    await this.findById(id);
     return this.prisma.automationRule.delete({ where: { id } });
   }
 
-  async toggle(id: string, organizationId: string) {
-    const rule = await this.findById(id, organizationId);
-
+  async toggle(id: string) {
+    const rule = await this.findById(id);
     return this.prisma.automationRule.update({
       where: { id },
       data: { isActive: !rule.isActive },

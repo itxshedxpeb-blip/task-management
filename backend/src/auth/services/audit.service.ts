@@ -9,7 +9,6 @@ export class AuditService {
 
   async log(params: {
     action: string;
-    organizationId?: string;
     userId?: string;
     sessionId?: string;
     resource?: string;
@@ -28,14 +27,13 @@ export class AuditService {
   }
 
   async getLogs(params: {
-    organizationId: string;
     userId?: string;
     action?: string;
     limit?: number;
     offset?: number;
   }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { organizationId: params.organizationId };
+    const where: any = {};
     if (params.userId) where.userId = params.userId;
     if (params.action) where.action = params.action;
 

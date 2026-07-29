@@ -33,6 +33,7 @@ yarn-error.log*
 .env*.local
 .env.production
 .env.development
+.env.staging
 
 # Vercel
 .vercel
@@ -58,10 +59,23 @@ backend/node_modules/
 
 # Frontend specific
 frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.staging
+frontend/.env.production
 frontend/.next/
 frontend/node_modules/
 frontend/out/
 frontend/build/
+
+# Android specific
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/app/release/
+frontend/android/app/debug/
+frontend/android/keystore.properties
+frontend/android/*.jks
+frontend/android/*.keystore
 
 # Prisma
 backend/prisma/migrations/migration_lock.toml

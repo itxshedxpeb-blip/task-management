@@ -5,22 +5,23 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getPerformance(organizationId: string, query: { dateFrom?: string; dateTo?: string; employeeId?: string }) {
+  async getPerformance(query: { dateFrom?: string; dateTo?: string; employeeId?: string }) {
     const { dateFrom, dateTo, employeeId } = query;
-    const baseWhere = { organizationId, isDeleted: false };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const baseWhere: any = { isDeleted: false };
 
     if (dateFrom || dateTo) {
-      (baseWhere as any).createdAt = {};
-      if (dateFrom) (baseWhere as any).createdAt.gte = new Date(dateFrom);
+      baseWhere.createdAt = {};
+      if (dateFrom) baseWhere.createdAt.gte = new Date(dateFrom);
       if (dateTo) {
         const toDate = new Date(dateTo);
         toDate.setHours(23, 59, 59, 999);
-        (baseWhere as any).createdAt.lte = toDate;
+        baseWhere.createdAt.lte = toDate;
       }
     }
 
     if (employeeId) {
-      (baseWhere as any).assignedUserId = employeeId;
+      baseWhere.assignedUserId = employeeId;
     }
 
     const tasks = await this.prisma.task.findMany({
@@ -33,7 +34,6 @@ export class ReportsService {
         dueDate: true,
         completedAt: true,
         verifiedAt: true,
-        incentiveValue: true,
         createdAt: true,
       },
     });
@@ -55,23 +55,18 @@ export class ReportsService {
           tasksOverdue: 0,
           completionRate: 0,
           onTimeRate: 0,
-          totalIncentive: 0,
         });
       }
 
       const emp = employeeMap.get(key);
       emp.tasksAssigned++;
 
-      if (['Completed', 'Verified', 'Closed'].includes(task.status)) {
+      if (['Completed', 'Archived'].includes(task.status)) {
         emp.tasksCompleted++;
-        if (task.status === 'Verified' || task.status === 'Closed') {
-          emp.tasksVerified++;
-          emp.totalIncentive += task.incentiveValue;
-        }
         if (task.completedAt && task.dueDate && new Date(task.completedAt) <= new Date(task.dueDate)) {
           emp.onTimeRate++;
         }
-      } else if (['Todo', 'InProgress', 'Reopened'].includes(task.status)) {
+      } else if (['Draft', 'Todo', 'InProgress', 'OnHold'].includes(task.status)) {
         emp.tasksPending++;
         if (task.dueDate && new Date(task.dueDate) < new Date()) {
           emp.tasksOverdue++;
@@ -92,9 +87,10 @@ export class ReportsService {
     return performance;
   }
 
-  async getTaskReport(organizationId: string, query: { dateFrom?: string; dateTo?: string }) {
+  async getTaskReport(query: { dateFrom?: string; dateTo?: string }) {
     const { dateFrom, dateTo } = query;
-    const baseWhere: any = { organizationId, isDeleted: false };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const baseWhere: any = { isDeleted: false };
 
     if (dateFrom || dateTo) {
       baseWhere.createdAt = {};
@@ -113,22 +109,17 @@ export class ReportsService {
       this.prisma.task.count({
         where: {
           ...baseWhere,
-          status: { in: ['Completed', 'Verified', 'Closed'] },
+          status: { in: ['Completed', 'Archived'] },
         },
       }),
       this.prisma.task.count({
         where: {
           ...baseWhere,
           dueDate: { lt: new Date() },
-          status: { in: ['Todo', 'InProgress', 'Reopened'] },
+          status: { in: ['Draft', 'Todo', 'InProgress', 'OnHold'] },
         },
       }),
     ]);
-
-    const totalIncentive = await this.prisma.task.aggregate({
-      where: baseWhere,
-      _sum: { incentiveValue: true },
-    });
 
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -149,20 +140,19 @@ export class ReportsService {
       completedTasks,
       overdueTasks,
       completionRate,
-      totalIncentive: totalIncentive._sum.incentiveValue || 0,
       byStatus: statusMap,
       byPriority: priorityMap,
     };
   }
 
-  async getSummary(organizationId: string) {
+  async getSummary() {
     const now = new Date();
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date(now);
     todayEnd.setHours(23, 59, 59, 999);
 
-    const baseWhere = { organizationId, isDeleted: false };
+    const baseWhere = { isDeleted: false };
 
     const [
       totalTasks,
@@ -171,16 +161,15 @@ export class ReportsService {
       overdueTasks,
       totalUsers,
       totalDepartments,
-      totalTeams,
     ] = await Promise.all([
       this.prisma.task.count({ where: baseWhere }),
       this.prisma.task.count({
-        where: { ...baseWhere, status: { in: ['Todo', 'InProgress', 'Reopened'] } },
+        where: { ...baseWhere, status: { in: ['Draft', 'Todo', 'InProgress', 'OnHold'] } },
       }),
       this.prisma.task.count({
         where: {
           ...baseWhere,
-          status: { in: ['Completed', 'Verified'] },
+          status: { in: ['Completed', 'Archived'] },
           completedAt: { gte: todayStart, lte: todayEnd },
         },
       }),
@@ -188,12 +177,11 @@ export class ReportsService {
         where: {
           ...baseWhere,
           dueDate: { lt: now },
-          status: { in: ['Todo', 'InProgress', 'Reopened'] },
+          status: { in: ['Draft', 'Todo', 'InProgress', 'OnHold'] },
         },
       }),
-      this.prisma.user.count({ where: { organizationId, isActive: true } }),
-      this.prisma.department.count({ where: { organizationId, isDeleted: false } }),
-      this.prisma.team.count({ where: { organizationId, isDeleted: false } }),
+      this.prisma.user.count({ where: { isActive: true } }),
+      this.prisma.department.count({ where: { isDeleted: false } }),
     ]);
 
     return {
@@ -203,7 +191,6 @@ export class ReportsService {
       overdueTasks,
       totalUsers,
       totalDepartments,
-      totalTeams,
     };
   }
 }

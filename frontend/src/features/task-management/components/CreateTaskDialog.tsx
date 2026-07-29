@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toInputDate } from '@/lib/date-utils';
 import { ImageUpload } from './ImageUpload';
 import { TaskChecklist } from './TaskChecklist';
 import { CreateTaskDto, TaskPriority, TaskCategory, LinkedModule, ChecklistItem } from '../types';
@@ -186,7 +187,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                   <Input
                     id="startDate"
                     type="date"
-                    value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                    value={toInputDate(startDate)}
                     onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : undefined)}
                     className="mt-1"
                   />
@@ -199,7 +200,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                   <Input
                     id="dueDate"
                     type="date"
-                    value={dueDate ? dueDate.toISOString().split('T')[0] : ''}
+                    value={toInputDate(dueDate)}
                     onChange={(e) => setDueDate(e.target.value ? new Date(e.target.value) : undefined)}
                     className="mt-1"
                   />
@@ -210,7 +211,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                   <Input
                     id="reminderDate"
                     type="date"
-                    value={reminderDate ? reminderDate.toISOString().split('T')[0] : ''}
+                    value={toInputDate(reminderDate)}
                     onChange={(e) => setReminderDate(e.target.value ? new Date(e.target.value) : undefined)}
                     className="mt-1"
                   />

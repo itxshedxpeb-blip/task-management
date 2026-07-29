@@ -22,12 +22,11 @@ export class NotificationController {
   @ApiOperation({ summary: 'List notifications for current user' })
   async findAll(
     @CurrentUser('id') userId: string,
-    @CurrentUser('organizationId') organizationId: string,
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
     @Query('isRead') isRead?: string,
   ) {
-    const data = await this.notificationService.findAll(userId, organizationId, {
+    const data = await this.notificationService.findAll(userId, {
       page: Number(page) || 1,
       pageSize: Number(pageSize) || 25,
       isRead,
@@ -40,9 +39,8 @@ export class NotificationController {
   @ApiOperation({ summary: 'Get unread notification count' })
   async getUnreadCount(
     @CurrentUser('id') userId: string,
-    @CurrentUser('organizationId') organizationId: string,
   ) {
-    const data = await this.notificationService.getUnreadCount(userId, organizationId);
+    const data = await this.notificationService.getUnreadCount(userId);
     return { message: 'Unread count fetched.', data };
   }
 
@@ -62,9 +60,8 @@ export class NotificationController {
   @ApiOperation({ summary: 'Mark all notifications as read' })
   async markAllAsRead(
     @CurrentUser('id') userId: string,
-    @CurrentUser('organizationId') organizationId: string,
   ) {
-    const data = await this.notificationService.markAllAsRead(userId, organizationId);
+    const data = await this.notificationService.markAllAsRead(userId);
     return { message: 'All notifications marked as read.', data };
   }
 }

@@ -3,7 +3,7 @@
 import React, { memo, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, ChevronLeft, ChevronRight, X, LayoutDashboard, CheckSquare, Users, Calendar, Columns, Grid3X3, BarChart3, Wallet, FileText, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, LayoutDashboard, CheckSquare, Calendar, Columns, Grid3X3, FileText, Settings } from 'lucide-react';
 import {
   useSidebarIsOpen,
   useSidebarIsCollapsed,
@@ -25,16 +25,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { title: 'My Tasks', href: '/dashboard/task-management', icon: CheckSquare },
-  { title: 'Team', href: '/dashboard/task-management', icon: Users },
-  { title: 'Calendar', href: '/dashboard/task-management', icon: Calendar },
-  { title: 'Kanban Board', href: '/dashboard/task-management', icon: Columns },
-  { title: 'Priority Matrix', href: '/dashboard/task-management', icon: Grid3X3 },
-  { title: 'Performance', href: '/dashboard/task-management', icon: BarChart3 },
-  { title: 'Salary', href: '/dashboard/task-management', icon: Wallet },
-  { title: 'Reports', href: '/dashboard/task-management', icon: FileText },
-  { title: 'Settings', href: '/settings', icon: Settings },
+  { title: 'Dashboard', href: '/app', icon: LayoutDashboard },
+  { title: 'Tasks', href: '/app/tasks', icon: CheckSquare },
+  { title: 'Board', href: '/app/board', icon: Columns },
+  { title: 'Calendar', href: '/app/calendar', icon: Calendar },
+  { title: 'Priority Matrix', href: '/app/priority-matrix', icon: Grid3X3 },
+  { title: 'Notes', href: '/app/notes', icon: FileText },
+  { title: 'Settings', href: '/app/settings', icon: Settings },
 ];
 
 const ACTIVE_STYLE: React.CSSProperties = {
@@ -115,7 +112,7 @@ export const Sidebar = memo(function Sidebar({ currentPath, userRole = 'owner' }
             <ul className="space-y-[2px] px-1">
               {railItems.map((item, index) => {
                 const Icon = item.icon;
-                const active = isLeafActive(pathname, item.href);
+                const active = isLeafActive(pathname || '/', item.href);
                 return (
                   <li key={`${item.href}-${index}`}>
                     <Link
@@ -138,7 +135,7 @@ export const Sidebar = memo(function Sidebar({ currentPath, userRole = 'owner' }
             <ul className="space-y-0.5 px-2">
               {NAV_ITEMS.map((item, index) => {
                 const Icon = item.icon;
-                const active = isLeafActive(pathname, item.href);
+                const active = isLeafActive(pathname || '/', item.href);
                 return (
                   <li key={`${item.href}-${index}`}>
                     <Link

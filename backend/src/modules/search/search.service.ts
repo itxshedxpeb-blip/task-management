@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class SearchService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async globalSearch(organizationId: string, query: string, limit?: number) {
+  async globalSearch(query: string, limit?: number) {
     const searchTerm = query;
     const maxResults = limit || 20;
 
@@ -18,7 +18,6 @@ export class SearchService {
     const [tasks, users, comments] = await Promise.all([
       this.prisma.task.findMany({
         where: {
-          organizationId,
           isDeleted: false,
           OR: [
             { title: { contains: searchTerm, mode: 'insensitive' } },
@@ -41,7 +40,6 @@ export class SearchService {
       }),
       this.prisma.user.findMany({
         where: {
-          organizationId,
           OR: [
             { name: { contains: searchTerm, mode: 'insensitive' } },
             { email: { contains: searchTerm, mode: 'insensitive' } },
@@ -59,7 +57,7 @@ export class SearchService {
       }),
       this.prisma.taskComment.findMany({
         where: {
-          task: { organizationId, isDeleted: false },
+          task: { isDeleted: false },
           isDeleted: false,
           content: { contains: searchTerm, mode: 'insensitive' },
         },
