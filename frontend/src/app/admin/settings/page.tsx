@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, RefreshCw, AlertTriangle, Save, Monitor, Download } from 'lucide-react';
+import { Settings, RefreshCw, AlertTriangle, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +18,6 @@ export default function AdminSettingsPage() {
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isPWAInstallable, setIsPWAInstallable] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -34,19 +32,6 @@ export default function AdminSettingsPage() {
       }
     };
     load();
-
-    // PWA install prompt handler
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setIsPWAInstallable(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
   }, []);
 
   const handleSave = async () => {
@@ -61,18 +46,6 @@ export default function AdminSettingsPage() {
       // handle error
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleInstallPWA = async () => {
-    if (!deferredPrompt) return;
-    
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setIsPWAInstallable(false);
-      setDeferredPrompt(null);
     }
   };
 
@@ -198,39 +171,6 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Install App</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isPWAInstallable && (
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-500/5 border-blue-500/20">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <Monitor className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <div className="font-medium text-foreground">Install as App</div>
-                  <div className="text-sm text-muted-foreground">
-                    Install this website as a Progressive Web App on your device
-                  </div>
-                </div>
-              </div>
-              <Button onClick={handleInstallPWA} size="sm" className="gap-2">
-                <Download className="h-4 w-4" />
-                Install
-              </Button>
-            </div>
-          )}
-          
-          {!isPWAInstallable && (
-            <div className="text-center py-6 text-muted-foreground text-sm">
-              <p>PWA installation is not available on this device.</p>
-              <p className="mt-2">On Chrome/Edge, look for the install icon in the address bar.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

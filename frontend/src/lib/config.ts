@@ -10,7 +10,6 @@ export interface AppConfig {
   apiUrl: string;
   capabilitiesPath: string;
   backendUrl: string;
-  frontendUrl: string;
   imageHostname: string;
   capacitorServerUrl?: string;
   enableAnalytics: boolean;
@@ -30,7 +29,6 @@ function getConfig(): AppConfig {
   
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
   const imageHostname = process.env.NEXT_PUBLIC_IMAGE_HOSTNAME;
   const capacitorServerUrl = process.env.NEXT_PUBLIC_CAPACITOR_SERVER_URL;
   
@@ -47,7 +45,6 @@ function getConfig(): AppConfig {
     apiUrl: apiBaseUrl,
     capabilitiesPath: process.env.NEXT_PUBLIC_CAPABILITIES_PATH || '/system/capabilities',
     backendUrl: backendUrl || 'http://127.0.0.1:8000',
-    frontendUrl,
     imageHostname: imageHostname || 'localhost',
     capacitorServerUrl,
     enableAnalytics: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',

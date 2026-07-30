@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Shield,
 } from 'lucide-react';
+import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -278,6 +279,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-1">
+            <PWAInstallButton variant="icon" showInHeader />
+            
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <Bell className="h-4 w-4" />
               <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 flex items-center justify-center p-0 bg-[#f97316] text-white text-[9px] border-0">

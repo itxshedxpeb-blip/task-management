@@ -5,6 +5,7 @@ import { QueryProvider } from "@/lib/react-query";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { ToastProvider } from "@/components/ui/toast";
+import { ServiceWorkerUpdate } from "@/components/pwa/ServiceWorkerUpdate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,13 +18,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Task Management System",
-  description: "Enterprise Task Management System",
+  title: "TaskFlow - Task Management System",
+  description: "Enterprise-grade task management system for teams and organizations",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "TaskApp",
+    title: "TaskFlow",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon-152x152.png", sizes: "152x152", type: "image/png" },
+    ],
   },
 };
 
@@ -86,6 +96,7 @@ export default function RootLayout({
             <AuthProvider>{children}<ToastProvider /></AuthProvider>
           </QueryProvider>
         </ThemeProvider>
+        <ServiceWorkerUpdate />
       </body>
     </html>
   );
