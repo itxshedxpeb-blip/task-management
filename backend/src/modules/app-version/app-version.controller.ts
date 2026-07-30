@@ -12,7 +12,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { RequireRoles } from '../../common/decorators/roles.decorator';
@@ -44,13 +44,13 @@ export class AppVersionController {
   @Public()
   @Get('download/:platform')
   @ApiOperation({ summary: 'Download APK for platform' })
-  async downloadApk(@Param('platform') platform: string, @Res() res: Response) {
+  async downloadApk(@Param('platform') platform: string, @Res() res: FastifyReply) {
     const sanitizedPlatform = platform.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase();
     const { data, fileName, fileType } = await this.appVersionService.getApkBinary(sanitizedPlatform);
 
-    res.setHeader('Content-Type', fileType);
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Length', data.length);
+    res.header('Content-Type', fileType);
+    res.header('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.header('Content-Length', data.length);
     
     return res.send(data);
   }
