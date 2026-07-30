@@ -2,19 +2,24 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
   UseGuards,
   BadRequestException,
   Request,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { RequireRoles } from '../../common/decorators/roles.decorator';
 import { AppVersionService } from './app-version.service';
 import { Public } from '../../auth/decorators/public.decorator';
+import { UploadApkDto } from './dto/upload-apk.dto';
 
 @ApiTags('app-version')
 @Controller('app-version')
@@ -24,93 +29,101 @@ export class AppVersionController {
   constructor(private readonly appVersionService: AppVersionService) {}
 
   @Public()
-  @Get()
-  @ApiOperation({ summary: 'Get all app versions' })
-  async getAllVersions() {
-    const versions = await this.appVersionService.getAppVersions();
-    return { data: versions };
-  }
-
-  @Public()
-  @Get('platform/:platform')
-  @ApiOperation({ summary: 'Get app versions by platform' })
-  async getVersionsByPlatform(@Param('platform') platform: string) {
-    const versions = await this.appVersionService.getAppVersions(platform);
-    return { data: versions };
-  }
-
-  @Public()
   @Get('latest/:platform')
   @ApiOperation({ summary: 'Get latest app version for platform' })
   async getLatestVersion(@Param('platform') platform: string) {
-    const version = await this.appVersionService.getLatestVersion(platform);
+    const sanitizedPlatform = platform.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase();
+    const version = await this.appVersionService.getLatestVersion(sanitizedPlatform);
+    
     if (!version) {
       throw new BadRequestException('No version found for this platform');
     }
+    
     return { data: version };
   }
 
   @Public()
-  @Get(':id')
-  @ApiOperation({ summary: 'Get specific app version' })
-  async getVersion(@Param('id') id: string) {
-    const version = await this.appVersionService.getAppVersion(id);
-    return { data: version };
+  @Get('download/:platform')
+  @ApiOperation({ summary: 'Download APK for platform' })
+  async downloadApk(@Param('platform') platform: string, @Res() res: Response) {
+    const sanitizedPlatform = platform.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase();
+    const { data, fileName, fileType } = await this.appVersionService.getApkBinary(sanitizedPlatform);
+
+    res.setHeader('Content-Type', fileType);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', data.length);
+    
+    return res.send(data);
   }
 
-  @Public()
-  @Get(':id/download')
-  @ApiOperation({ summary: 'Download app version (increments download count)' })
-  async downloadVersion(@Param('id') id: string) {
-    const version = await this.appVersionService.getAppVersion(id);
-    await this.appVersionService.incrementDownloadCount(id);
-    return {
-      data: {
-        downloadUrl: version.fileUrl,
-        fileName: version.fileName,
-        fileSize: version.fileSize,
-        fileType: version.fileType,
-      },
-    };
-  }
-
-  @Post()
+  @Post('upload')
   @RequireRoles('SUPER_ADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Create new app version (Admin only)' })
-  async createVersion(@Body() body: {
-    version: string;
-    platform: string;
-    buildNumber: number;
-    fileUrl: string;
-    fileSize: number;
-    fileName: string;
-    fileType: string;
-    releaseNotes?: string;
-    isStable?: boolean;
-  }, @Request() req: any) {
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload or replace APK (Admin only)' })
+  async uploadApk(@Request() req: any) {
     const user = req.user;
-    const version = await this.appVersionService.createAppVersion({
-      version: body.version,
-      platform: body.platform,
-      buildNumber: body.buildNumber,
-      fileUrl: body.fileUrl,
-      fileSize: body.fileSize,
-      fileName: body.fileName,
-      fileType: body.fileType,
-      releaseNotes: body.releaseNotes,
+    const data = await req.file();
+    
+    if (!data) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // Read file into memory
+    const fileBuffer = Buffer.from(await data.file.toBuffer());
+
+    const versionName = data.fields.versionName?.value;
+    const versionCode = parseInt(data.fields.versionCode?.value);
+    const platform = data.fields.platform?.value || 'ANDROID';
+    const releaseNotes = data.fields.releaseNotes?.value;
+    const minimumSupportedVersion = data.fields.minimumSupportedVersion?.value;
+    const isMandatory = data.fields.isMandatory?.value === 'true';
+
+    if (!versionName || !versionCode) {
+      throw new BadRequestException('versionName and versionCode are required');
+    }
+
+    const dto: UploadApkDto = {
+      versionName,
+      versionCode,
+      platform,
+      fileName: data.filename,
+      fileSize: data.file.size,
+      fileType: data.mimetype,
+      releaseNotes,
+      minimumSupportedVersion,
+      isMandatory,
+      isLatest: true,
       uploadedBy: user.id || 'admin',
       uploadedByName: user.name || 'Admin',
-      isStable: body.isStable,
-    });
+    };
+
+    const version = await this.appVersionService.uploadOrReplaceApk(dto, fileBuffer);
 
     return { data: version };
   }
 
-  @Delete(':id')
+  @Patch(':platform')
   @RequireRoles('SUPER_ADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'Delete app version (Admin only)' })
-  async deleteVersion(@Param('id') id: string) {
-    const version = await this.appVersionService.deleteAppVersion(id);
+  @ApiOperation({ summary: 'Update app version metadata (Admin only)' })
+  async updateVersion(
+    @Param('platform') platform: string,
+    @Body() body: {
+      releaseNotes?: string;
+      isMandatory?: boolean;
+      isActive?: boolean;
+    },
+  ) {
+    const sanitizedPlatform = platform.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase();
+    const version = await this.appVersionService.updateVersion(sanitizedPlatform, body);
     return { data: version };
+  }
+
+  @Delete(':platform')
+  @RequireRoles('SUPER_ADMIN', 'ADMIN')
+  @ApiOperation({ summary: 'Delete APK (Admin only)' })
+  async deleteApk(@Param('platform') platform: string) {
+    const sanitizedPlatform = platform.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase();
+    await this.appVersionService.deleteApk(sanitizedPlatform);
+    return { message: 'APK deleted successfully' };
   }
 }

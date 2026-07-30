@@ -18,6 +18,7 @@ import {
   LogOut,
   ChevronDown,
   Shield,
+  Smartphone,
 } from 'lucide-react';
 import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   { title: 'Employees', href: '/admin/employees', icon: Users },
   { title: 'Tasks', href: '/admin/tasks', icon: CheckSquare },
   { title: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { title: 'Mobile App', href: '/admin/mobile-app', icon: Smartphone },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 

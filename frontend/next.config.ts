@@ -18,10 +18,14 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts'],
   },
+  compress: true,
+  poweredByHeader: false,
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
     return [
@@ -38,7 +42,8 @@ const pwaConfig = withPWA({
   register: true,
   skipWaiting: true,
   disable: config.environment === 'development',
+  buildExcludes: [/middleware-manifest\.json$/],
 });
 
-// @ts-ignore
+// @ts-ignore - next-pwa type incompatibility with Next.js 16, runtime works correctly
 export default withBundleAnalyzer(pwaConfig(nextConfig));

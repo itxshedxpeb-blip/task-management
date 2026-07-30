@@ -75,6 +75,14 @@ export default function SettingsPage() {
     }
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -205,36 +213,53 @@ export default function SettingsPage() {
               ) : appVersions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">No app versions available</div>
               ) : (
-                <div className="space-y-3">
-                  {appVersions.map((version) => (
+                <div className="space-y-4">
+                  {appVersions
+                    .filter((v) => v.isActive)
+                    .map((version) => (
                     <div
                       key={version.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      className="border rounded-lg p-4 space-y-3"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                          <Package className="h-5 w-5 text-blue-500" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-foreground">
-                            {version.platform.charAt(0).toUpperCase() + version.platform.slice(1)} - v{version.version}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-foreground">{version.versionName}</h4>
+                            {version.isLatest && (
+                              <span className="px-2 py-0.5 text-xs bg-blue-500 text-white rounded-full">Latest</span>
+                            )}
+                            {version.isMandatory && (
+                              <span className="px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">Mandatory</span>
+                            )}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            Build {version.buildNumber} • {(version.fileSize / (1024 * 1024)).toFixed(2)} MB
+                          
+                          <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                            <div>Version Code: {version.versionCode}</div>
+                            <div>Platform: {version.platform}</div>
+                            <div>Size: {formatFileSize(version.fileSize)}</div>
+                            <div>Downloads: {version.downloadCount}</div>
                           </div>
-                          {version.isLatest && (
-                            <div className="text-xs text-green-500 font-medium mt-1">Latest Version</div>
+
+                          {version.releaseNotes && (
+                            <div className="text-sm">
+                              <p className="font-medium text-foreground mb-1">Release Notes:</p>
+                              <p className="text-muted-foreground">{version.releaseNotes}</p>
+                            </div>
                           )}
+
+                          <div className="text-xs text-muted-foreground">
+                            Uploaded: {new Date(version.uploadedAt).toLocaleDateString()}
+                          </div>
                         </div>
+
+                        <Button
+                          onClick={() => handleDownloadApp(version.id)}
+                          className="gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
                       </div>
-                      <Button
-                        onClick={() => handleDownloadApp(version.id)}
-                        size="sm"
-                        className="gap-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
                     </div>
                   ))}
                 </div>

@@ -469,26 +469,31 @@ model Note {
 }
 
 model AppVersion {
-  id             String   @id @default(uuid())
-  version        String   @unique
-  platform       String
-  buildNumber    Int
-  fileUrl        String
-  fileSize       Int
-  fileName       String
-  fileType       String
-  releaseNotes   String?
-  isLatest       Boolean  @default(false)
-  isStable       Boolean  @default(true)
-  downloadCount  Int      @default(0)
-  uploadedBy     String
-  uploadedByName String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                     String   @id @default(uuid())
+  versionName            String
+  versionCode            Int
+  platform               String
+  fileName               String
+  apkData                Bytes?
+  fileSize               Int
+  fileType               String
+  releaseNotes           String?
+  minimumSupportedVersion String?
+  isLatest               Boolean  @default(false)
+  isMandatory            Boolean  @default(false)
+  isActive               Boolean  @default(true)
+  downloadCount          Int      @default(0)
+  uploadedBy             String
+  uploadedByName         String
+  uploadedAt             DateTime @default(now())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
+  @@unique([platform])
   @@index([platform])
   @@index([isLatest])
-  @@index([version])
+  @@index([isActive])
+  @@index([versionName])
 }
 
 enum UserType {

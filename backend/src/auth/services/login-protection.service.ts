@@ -17,8 +17,15 @@ export class LoginProtectionService {
     success: boolean;
     failureReason?: string;
   }) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.prisma.loginAttempt.create({ data: params as any });
+    await this.prisma.loginAttempt.create({
+      data: {
+        email: params.email,
+        ipAddress: params.ipAddress,
+        userAgent: params.userAgent,
+        success: params.success,
+        failureReason: params.failureReason,
+      },
+    });
 
     if (!params.success) {
       await this.prisma.user.updateMany({
@@ -56,7 +63,7 @@ export class LoginProtectionService {
             ipAddress: params.ipAddress,
             success: false,
             failureReason: `Account locked for ${duration / 60000} minutes (${recentFailures} failures)`,
-            lockedUntil,
+            lockedUntil: lockedUntil,
           },
         });
 
