@@ -28,16 +28,16 @@ function getConfig(): AppConfig {
   const environment = getEnvironment();
   
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-  const backendUrl = process.env.BACKEND_URL;
-  const imageHostname = process.env.IMAGE_HOSTNAME;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const imageHostname = process.env.NEXT_PUBLIC_IMAGE_HOSTNAME;
   const capacitorServerUrl = process.env.NEXT_PUBLIC_CAPACITOR_SERVER_URL;
   
   if (!backendUrl && environment === 'production') {
-    throw new Error('BACKEND_URL environment variable is required in production');
+    throw new Error('NEXT_PUBLIC_BACKEND_URL environment variable is required in production');
   }
   
   if (!imageHostname && environment === 'production') {
-    throw new Error('IMAGE_HOSTNAME environment variable is required in production');
+    throw new Error('NEXT_PUBLIC_IMAGE_HOSTNAME environment variable is required in production');
   }
   
   return {

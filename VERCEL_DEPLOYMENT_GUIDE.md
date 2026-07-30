@@ -21,8 +21,8 @@ Add these in Vercel Project Settings → Environment Variables:
 
 | Variable | Value | Environment |
 |----------|-------|------------|
-| `BACKEND_URL` | `https://task-management-backend-v2mh.onrender.com` | Production |
-| `IMAGE_HOSTNAME` | `task-management-backend-v2mh.onrender.com` | Production |
+| `NEXT_PUBLIC_BACKEND_URL` | `https://task-management-backend-v2mh.onrender.com` | Production |
+| `NEXT_PUBLIC_IMAGE_HOSTNAME` | `task-management-backend-v2mh.onrender.com` | Production |
 | `NEXT_PUBLIC_ENVIRONMENT` | `production` | Production |
 
 ---
