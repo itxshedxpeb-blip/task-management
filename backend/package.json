@@ -22,9 +22,6 @@
     "seed:admin": "ts-node prisma/seed-admin.ts",
     "seed:all": "ts-node prisma/seed-admin.ts && ts-node prisma/seed-system.ts"
   },
-  "prisma": {
-    "seed": "ts-node prisma/seed-admin.ts && ts-node prisma/seed-system.ts"
-  },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
