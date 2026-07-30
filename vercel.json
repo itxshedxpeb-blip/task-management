@@ -1,17 +1,9 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm install",
-  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
   "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_ENVIRONMENT": "production"
-  },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_ENVIRONMENT": "production"
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
@@ -51,12 +43,6 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://task-management-backend-v2mh.onrender.com/:path*"
     }
   ]
 }
