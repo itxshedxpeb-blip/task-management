@@ -10,7 +10,7 @@ import { RequirePermissions } from '../../common/decorators/permissions.decorato
 
 @ApiTags('settings')
 @ApiBearerAuth()
-@Controller('settings')
+@Controller('admin/settings')
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
