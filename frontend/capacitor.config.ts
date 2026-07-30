@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: '.next',
   server: {
     // Development: use localhost for emulator
-    // Production: set to your deployed backend URL
+    // Production: set to your deployed backend URL via CAPACITOR_SERVER_URL env var
     url: process.env.CAPACITOR_SERVER_URL || 'http://10.0.2.2:3000',
     cleartext: true,
   },

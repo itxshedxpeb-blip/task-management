@@ -228,14 +228,15 @@ export function TaskDetailClient() {
   const params = useParams();
   const router = useRouter();
   const taskId = params?.id as string;
-  if (!taskId) {
-    return <div>Task not found</div>;
-  }
   const { user } = useAuth();
   const { data: task, isLoading, error, refetch } = useTaskDetail(taskId);
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const [showDelete, setShowDelete] = useState(false);
+
+  if (!taskId) {
+    return <div>Task not found</div>;
+  }
 
   if (isLoading) return <DetailSkeleton />;
 

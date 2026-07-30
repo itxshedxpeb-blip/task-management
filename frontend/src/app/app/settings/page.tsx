@@ -47,21 +47,21 @@ export default function SettingsPage() {
   const [loadingApps, setLoadingApps] = useState(false);
 
   useEffect(() => {
+    const fetchAppVersions = async () => {
+      try {
+        setLoadingApps(true);
+        const response = await fetch(`${config.backendUrl}/app-version`);
+        const data = await response.json();
+        setAppVersions(data.data || []);
+      } catch (error) {
+        console.error('Failed to fetch app versions:', error);
+      } finally {
+        setLoadingApps(false);
+      }
+    };
+
     fetchAppVersions();
   }, []);
-
-  const fetchAppVersions = async () => {
-    try {
-      setLoadingApps(true);
-      const response = await fetch(`${config.backendUrl}/app-version`);
-      const data = await response.json();
-      setAppVersions(data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch app versions:', error);
-    } finally {
-      setLoadingApps(false);
-    }
-  };
 
   const handleDownloadApp = async (versionId: string) => {
     try {

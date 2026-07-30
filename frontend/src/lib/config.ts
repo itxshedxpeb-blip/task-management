@@ -28,16 +28,24 @@ function getConfig(): AppConfig {
   const environment = getEnvironment();
   
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-  const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
-  const imageHostname = process.env.IMAGE_HOSTNAME || 'localhost';
+  const backendUrl = process.env.BACKEND_URL;
+  const imageHostname = process.env.IMAGE_HOSTNAME;
   const capacitorServerUrl = process.env.NEXT_PUBLIC_CAPACITOR_SERVER_URL;
+  
+  if (!backendUrl && environment === 'production') {
+    throw new Error('BACKEND_URL environment variable is required in production');
+  }
+  
+  if (!imageHostname && environment === 'production') {
+    throw new Error('IMAGE_HOSTNAME environment variable is required in production');
+  }
   
   return {
     environment,
     apiUrl: apiBaseUrl,
     capabilitiesPath: process.env.NEXT_PUBLIC_CAPABILITIES_PATH || '/system/capabilities',
-    backendUrl,
-    imageHostname,
+    backendUrl: backendUrl || 'http://127.0.0.1:8000',
+    imageHostname: imageHostname || 'localhost',
     capacitorServerUrl,
     enableAnalytics: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',
     enableCrashReporting: process.env.NEXT_PUBLIC_ENABLE_CRASH_REPORTING === 'true',
