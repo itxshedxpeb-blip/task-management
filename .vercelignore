@@ -1,0 +1,30 @@
+# Backend
+backend/
+backend/node_modules/
+backend/dist/
+backend/.env*
+
+# Frontend development files
+frontend/.env.local
+frontend/.env.development
+frontend/.env.staging
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Capacitor
+frontend/android/
+frontend/ios/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+.env*
+
+# Scripts
+scripts/
