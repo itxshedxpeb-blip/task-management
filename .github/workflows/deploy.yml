@@ -44,13 +44,6 @@ jobs:
           BACKEND_URL: https://task-management-backend-v2mh.onrender.com
           IMAGE_HOSTNAME: https://task-management-backend-v2mh.onrender.com
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/.next
-          retention-days: 1
-
   # Backend Build & Test
   backend-build:
     name: Backend Build & Test
@@ -82,41 +75,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-build
-          path: backend/dist
-          retention-days: 1
-
-  # Deploy to Vercel (Frontend)
-  deploy-vercel:
-    name: Deploy to Vercel
-    needs: [frontend-build]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-
   # Deploy to Render (Backend)
   deploy-render:
     name: Deploy to Render
@@ -134,20 +92,3 @@ jobs:
           service-id: ${{ secrets.RENDER_SERVICE_ID }}
           render-api-key: ${{ secrets.RENDER_API_KEY }}
           wait-for-success: true
-
-  # Notify on success/failure
-  notify:
-    name: Notify Deployment Status
-    needs: [deploy-vercel, deploy-render]
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-      - name: Check deployment status
-        run: |
-          if [ "${{ needs.deploy-vercel.result }}" == "success" ] && [ "${{ needs.deploy-render.result }}" == "success" ]; then
-            echo "✅ All deployments successful"
-          else
-            echo "❌ Some deployments failed"
-            exit 1
-          fi
