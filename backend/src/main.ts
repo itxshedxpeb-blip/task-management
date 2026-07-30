@@ -45,7 +45,7 @@ async function bootstrap() {
   }
   const allowedOrigins = frontendUrl
     .split(',')
-    .map((u) => u.trim())
+    .map((u) => u.trim().replace(/\/$/, ''))
     .filter(Boolean);
   await app.register(cors, {
     origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
