@@ -56,7 +56,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://peb-crm-api.onrender.com/:path*"
+      "destination": "https://task-management-backend-v2mh.onrender.com/:path*"
     }
   ]
 }

@@ -36,7 +36,7 @@ services:
       - key: FRONTEND_URL
         value: https://peb-crm-web.onrender.com
       - key: BACKEND_URL
-        value: https://peb-crm-api.onrender.com
+        value: https://task-management-backend-v2mh.onrender.com
       - key: MAIL_PROVIDER
         value: auto
       - key: RESEND_API_KEY
@@ -70,4 +70,4 @@ services:
       - key: NODE_ENV
         value: production
       - key: BACKEND_URL
-        value: https://peb-crm-api.onrender.com
+        value: https://task-management-backend-v2mh.onrender.com

@@ -41,8 +41,8 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
-          BACKEND_URL: https://peb-crm-api.onrender.com
-          IMAGE_HOSTNAME: peb-crm-api.onrender.com
+          BACKEND_URL: https://task-management-backend-v2mh.onrender.com
+          IMAGE_HOSTNAME: task-management-backend-v2mh.onrender.com
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
