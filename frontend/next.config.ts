@@ -1,16 +1,9 @@
 import type { NextConfig } from "next";
-import bundleAnalyzer from '@next/bundle-analyzer';
 import withPWA from 'next-pwa';
-import { config } from './src/lib/config';
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
-  allowedDevOrigins: ['10.0.2.2', '10.0.3.2'],
   images: {
     remotePatterns: [
       {
@@ -27,7 +20,7 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+    const backendUrl = process.env.BACKEND_URL || 'https://task-management-backend-v2mh.onrender.com';
     return [
       {
         source: '/api/:path*',
@@ -41,9 +34,8 @@ const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: config.environment === 'development',
+  disable: process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production',
   buildExcludes: [/middleware-manifest\.json$/],
 });
 
-// @ts-ignore - next-pwa type incompatibility with Next.js 16, runtime works correctly
-export default withBundleAnalyzer(pwaConfig(nextConfig));
+export default pwaConfig(nextConfig as unknown as Parameters<typeof withPWA>[0]);

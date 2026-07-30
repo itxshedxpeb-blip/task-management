@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Upload, Download, Trash2, Smartphone, Calendar, FileText, HardDrive, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,11 +52,7 @@ export default function AdminMobileAppPage() {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  useEffect(() => {
-    fetchLatestVersion();
-  }, []);
-
-  const fetchLatestVersion = async () => {
+  const fetchLatestVersion = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`${config.backendUrl}/app-version/latest/ANDROID`);
@@ -72,7 +68,35 @@ export default function AdminMobileAppPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`${config.backendUrl}/app-version/latest/ANDROID`, { signal: controller.signal });
+        if (!controller.signal.aborted) {
+          if (response.ok) {
+            const data = await response.json();
+            setLatestVersion(data.data || null);
+          } else {
+            setLatestVersion(null);
+          }
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error('Failed to fetch latest version:', error);
+          setLatestVersion(null);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

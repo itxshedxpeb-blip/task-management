@@ -37,7 +37,7 @@ import { formatDate, toInputDate } from '@/lib/date-utils';
 import { useTasks, useCreateTask, useDeleteTask, useMoveTask } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { TaskStatus, TaskPriority } from '@/features/task-management/types';
-import { STATUS_LABELS, STATUS_VARIANT, STATUS_TRANSITIONS, PRIORITY_VARIANT } from '@/features/task-management/constants/taskConfig';
+import { STATUS_LABELS, STATUS_TRANSITIONS } from '@/features/task-management/constants/taskConfig';
 import { StatusSmartBadge, PrioritySmartBadge } from '@/features/task-management/components/shared/SmartBadge';
 import { CountdownTimer } from '@/features/task-management/components/shared/CountdownTimer';
 import { getDaysOverdue } from '@/features/task-management/utils/taskFormatters';

@@ -102,7 +102,7 @@ apiClient.interceptors.response.use(
       processQueue(refreshError, null);
       clearSession();
       if (typeof window !== 'undefined') {
-        const authRoutes = new Set(['/login', '/register', '/forgot-password', '/reset-password']);
+        const authRoutes = new Set(['/login', '/register']);
         const currentPath = window.location.pathname;
         if (!authRoutes.has(currentPath)) {
           const reason =

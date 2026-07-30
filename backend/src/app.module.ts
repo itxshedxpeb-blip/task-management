@@ -4,7 +4,6 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import { ConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -37,7 +36,6 @@ import { AppVersionModule } from './modules/app-version/app-version.module';
       ],
     }),
     PrismaModule,
-    CommonModule,
     AuthModule,
     TaskModule,
     AdminModule,

@@ -1,19 +1,19 @@
 # Render Blueprint - Complete Stack (Database + Backend + Frontend)
 databases:
-  - name: peb-crm-db
-    databaseName: peb-crm
-    user: pebcrm
+  - name: task-management-db
+    databaseName: task-management
+    user: taskmgr
     plan: free
     region: oregon
 
 services:
   # Backend API
   - type: web
-    name: peb-crm-api
+    name: task-management-api
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: cd backend && npm ci && npx prisma generate && npm run type-check && npm run build
+    buildCommand: cd backend && npm ci && npx prisma generate && npm run build
     startCommand: cd backend && npx prisma migrate deploy && node dist/main.js
     healthCheckPath: /live
     envVars:
@@ -23,44 +23,28 @@ services:
         value: "8000"
       - key: DATABASE_URL
         fromDatabase:
-          name: peb-crm-db
+          name: task-management-db
           property: connectionString
       - key: DIRECT_DATABASE_URL
         fromDatabase:
-          name: peb-crm-db
+          name: task-management-db
           property: connectionString
       - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: COOKIE_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://peb-crm-web.onrender.com
+        value: https://task-management-w4ai-swart.vercel.app
       - key: BACKEND_URL
         value: https://task-management-backend-v2mh.onrender.com
-      - key: MAIL_PROVIDER
-        value: auto
-      - key: RESEND_API_KEY
-        sync: false
-      - key: RESEND_FROM_EMAIL
-        sync: false
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: SMTP_FROM_EMAIL
-        sync: false
-      - key: SMTP_FROM_NAME
-        sync: false
       - key: BRAND_COMPANY_NAME
         sync: false
 
   # Frontend Web
   - type: web
-    name: peb-crm-web
+    name: task-management-web
     runtime: node
     plan: starter
     region: oregon
@@ -71,3 +55,15 @@ services:
         value: production
       - key: BACKEND_URL
         value: https://task-management-backend-v2mh.onrender.com
+      - key: NEXT_PUBLIC_BACKEND_URL
+        value: https://task-management-backend-v2mh.onrender.com
+      - key: NEXT_PUBLIC_ENVIRONMENT
+        value: production
+      - key: NEXT_PUBLIC_IMAGE_HOSTNAME
+        value: task-management-backend-v2mh.onrender.com
+      - key: NEXT_PUBLIC_API_URL
+        value: /api
+      - key: NEXT_PUBLIC_CAPABILITIES_PATH
+        value: /system/capabilities
+      - key: NEXT_PUBLIC_CAPACITOR_SERVER_URL
+        value: https://task-management-w4ai-swart.vercel.app

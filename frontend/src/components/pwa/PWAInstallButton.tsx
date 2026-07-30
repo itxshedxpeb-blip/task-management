@@ -171,7 +171,7 @@ export function PWAInstallButton({
                   <div className="flex-1">
                     <p className="text-sm font-medium">Tap the Share button</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      It's at the bottom of the screen (square with arrow pointing up)
+                      It&apos;s at the bottom of the screen (square with arrow pointing up)
                     </p>
                   </div>
                 </div>
@@ -180,7 +180,7 @@ export function PWAInstallButton({
                     <span className="text-blue-500 font-semibold text-sm">2</span>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Scroll down and tap "Add to Home Screen"</p>
+                    <p className="text-sm font-medium">Scroll down and tap &quot;Add to Home Screen&quot;</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       This will add the app icon to your home screen
                     </p>
@@ -191,7 +191,7 @@ export function PWAInstallButton({
                     <span className="text-blue-500 font-semibold text-sm">3</span>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Tap "Add" in the top right</p>
+                    <p className="text-sm font-medium">Tap &quot;Add&quot; in the top right</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       The app will be added to your home screen
                     </p>

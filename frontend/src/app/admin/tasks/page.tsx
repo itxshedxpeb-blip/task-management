@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  CheckSquare,
   Search,
   RefreshCw,
   AlertTriangle,
@@ -33,7 +32,7 @@ import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/date-utils';
 import { adminApi } from '@/modules/admin/services/adminApi';
 import { useDeleteTask } from '@/modules/tasks/hooks/useTasks';
-import { STATUS_VARIANT, PRIORITY_VARIANT, STATUS_LABELS } from '@/features/task-management/constants/taskConfig';
+import { STATUS_LABELS } from '@/features/task-management/constants/taskConfig';
 import { StatusSmartBadge, PrioritySmartBadge } from '@/features/task-management/components/shared/SmartBadge';
 import { CountdownTimer } from '@/features/task-management/components/shared/CountdownTimer';
 import { getDaysOverdue } from '@/features/task-management/utils/taskFormatters';

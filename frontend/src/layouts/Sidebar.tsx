@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, X, LayoutDashboard, CheckSquare, Calendar, Columns, Grid3X3, FileText, Settings } from 'lucide-react';

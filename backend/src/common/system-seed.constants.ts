@@ -101,5 +101,3 @@ export const SYSTEM_ROLE_DEFS = [
     ],
   },
 ] as const;
-
-export const EVENT_RULES: Record<string, any[]> = {};

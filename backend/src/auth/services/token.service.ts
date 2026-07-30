@@ -21,6 +21,7 @@ export class TokenService {
     passwordVersion?: number;
   }): string {
     const expiresIn = this.configService.get<string>('jwt.expiresIn') || '30m';
+    const secret = this.configService.get<string>('jwt.secret');
     return this.jwtService.sign(
       {
         sub: params.userId,
@@ -32,6 +33,7 @@ export class TokenService {
         passwordVersion: params.passwordVersion || 1,
       },
       {
+        secret,
         expiresIn: expiresIn as any,
       },
     );

@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePlatformDetection, PlatformInfo } from './usePlatformDetection';
 
-export type InstallState = 
-  | 'idle' 
-  | 'available' 
-  | 'installing' 
-  | 'installed' 
-  | 'dismissed' 
+export type InstallState =
+  | 'idle'
+  | 'available'
+  | 'installing'
+  | 'installed'
+  | 'dismissed'
   | 'not-supported'
   | 'error';
 
@@ -17,52 +17,43 @@ export interface PWAInstallState {
   isInstalled: boolean;
   isInstalling: boolean;
   installState: InstallState;
-  platformInfo: PlatformInfo;
   install: () => Promise<void>;
   dismiss: () => void;
   reset: () => void;
   error: string | null;
+  platformInfo: PlatformInfo;
+}
+
+function isStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         (window.navigator as any).standalone === true;
 }
 
 export function usePWAInstall(): PWAInstallState {
   const platformInfo = usePlatformDetection();
-  const [installState, setInstallState] = useState<InstallState>('idle');
+  const [installState, setInstallState] = useState<InstallState>(() => {
+    if (isStandalone()) return 'installed';
+    if (!platformInfo.supportsPWAInstall) return 'not-supported';
+    return 'idle';
+  });
   const [error, setError] = useState<string | null>(null);
   const deferredPromptRef = useRef<any>(null);
   const dismissedRef = useRef(false);
 
-  // Check if already installed (standalone mode)
-  const isInstalled = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as any).standalone === true;
-  })[0];
+  const isInstalled = isStandalone();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Check if already installed
-    const checkInstalled = () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          (window.navigator as any).standalone === true;
-      if (isStandalone && installState === 'idle') {
-        setInstallState('installed');
-      }
-    };
-
-    checkInstalled();
-
-    // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       deferredPromptRef.current = e;
-      
-      if (!dismissedRef.current && !isInstalled) {
+      if (!dismissedRef.current && !isStandalone()) {
         setInstallState('available');
       }
     };
 
-    // Listen for appinstalled event
     const handleAppInstalled = () => {
       setInstallState('installed');
       deferredPromptRef.current = null;
@@ -72,51 +63,16 @@ export function usePWAInstall(): PWAInstallState {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Listen for display mode changes
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    mediaQuery.addEventListener('change', checkInstalled);
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      mediaQuery.removeEventListener('change', checkInstalled);
     };
-  }, [installState, isInstalled]);
-
-  // Update state based on platform support
-  useEffect(() => {
-    if (isInstalled) {
-      setInstallState('installed');
-      return;
-    }
-
-    if (dismissedRef.current) {
-      setInstallState('dismissed');
-      return;
-    }
-
-    if (!platformInfo.supportsPWAInstall) {
-      setInstallState('not-supported');
-      return;
-    }
-
-    // If we have a deferred prompt and not dismissed, show as available
-    if (deferredPromptRef.current && !dismissedRef.current) {
-      setInstallState('available');
-    } else if (!platformInfo.supportsNativeInstall && platformInfo.supportsPWAInstall) {
-      // iOS Safari - show available for manual install
-      setInstallState('available');
-    } else {
-      setInstallState('idle');
-    }
-  }, [platformInfo, isInstalled]);
+  }, []);
 
   const install = useCallback(async () => {
     setError(null);
-    
-    if (installState === 'installed') {
-      return;
-    }
+
+    if (isStandalone()) return;
 
     if (installState === 'not-supported') {
       setError('PWA installation is not supported on this device/browser.');
@@ -124,23 +80,16 @@ export function usePWAInstall(): PWAInstallState {
     }
 
     if (!platformInfo.supportsNativeInstall) {
-      // iOS Safari - show instructions
       setInstallState('installing');
-      // The UI component will show instructions
-      setTimeout(() => {
-        setInstallState('available');
-      }, 3000);
+      setTimeout(() => setInstallState('available'), 3000);
       return;
     }
 
-    // Native install (Chrome/Edge on Desktop/Android)
     if (deferredPromptRef.current) {
       setInstallState('installing');
-      
       try {
         deferredPromptRef.current.prompt();
         const { outcome } = await deferredPromptRef.current.userChoice;
-        
         if (outcome === 'accepted') {
           setInstallState('installed');
           deferredPromptRef.current = null;
@@ -149,7 +98,7 @@ export function usePWAInstall(): PWAInstallState {
           setInstallState('dismissed');
           dismissedRef.current = true;
         }
-      } catch (err) {
+      } catch {
         setError('Installation failed. Please try again.');
         setInstallState('error');
       }
@@ -168,10 +117,11 @@ export function usePWAInstall(): PWAInstallState {
   const reset = useCallback(() => {
     dismissedRef.current = false;
     setError(null);
-    setInstallState('idle');
+    deferredPromptRef.current = null;
+    setInstallState(isStandalone() ? 'installed' : 'idle');
   }, []);
 
-  const canInstall = installState === 'available' && !isInstalled;
+  const canInstall = installState === 'available' && !isStandalone();
   const isInstalling = installState === 'installing';
 
   return {

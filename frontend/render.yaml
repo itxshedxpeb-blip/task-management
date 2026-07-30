@@ -1,7 +1,7 @@
 # Render Blueprint - Frontend Web
 services:
   - type: web
-    name: peb-crm-web
+    name: task-management-web
     runtime: node
     plan: starter
     region: oregon
@@ -11,4 +11,10 @@ services:
       - key: NODE_ENV
         value: production
       - key: BACKEND_URL
+        sync: false
+      - key: NEXT_PUBLIC_BACKEND_URL
+        sync: false
+      - key: NEXT_PUBLIC_ENVIRONMENT
+        value: production
+      - key: NEXT_PUBLIC_IMAGE_HOSTNAME
         sync: false

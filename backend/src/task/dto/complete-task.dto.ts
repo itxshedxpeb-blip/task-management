@@ -42,6 +42,5 @@ export class CompleteTaskDto {
 
   @IsOptional()
   @IsArray()
-  @IsOptional()
   completionChecklist?: { text: string; completed: boolean; order: number }[];
 }

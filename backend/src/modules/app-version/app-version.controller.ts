@@ -10,7 +10,6 @@ import {
   BadRequestException,
   Request,
   Res,
-  StreamableFile,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import type { Response } from 'express';

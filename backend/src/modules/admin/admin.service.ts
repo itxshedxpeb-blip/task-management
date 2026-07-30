@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { UserRole, UserType } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
@@ -248,19 +249,15 @@ export class AdminService {
     id: string,
     data: {
       name?: string;
-      role?: string;
-      userType?: string;
+      role?: UserRole;
+      userType?: UserType;
       isActive?: boolean;
     },
   ) {
     await this.getUser(id);
     return this.prisma.user.update({
       where: { id },
-      data: {
-        ...data,
-        role: data.role as any,
-        userType: data.userType as any,
-      },
+      data,
       select: {
         id: true,
         email: true,

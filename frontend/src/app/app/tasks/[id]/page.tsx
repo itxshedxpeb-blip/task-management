@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -11,7 +10,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   MessageSquare,
-  Paperclip,
   Tag,
   RefreshCw,
   Send,

@@ -32,6 +32,23 @@ function getConfig(): AppConfig {
   const imageHostname = process.env.NEXT_PUBLIC_IMAGE_HOSTNAME;
   const capacitorServerUrl = process.env.NEXT_PUBLIC_CAPACITOR_SERVER_URL;
   
+  // For Capacitor/Android builds, always use production URLs
+  const isCapacitorBuild = typeof window !== 'undefined' && (window as any).Capacitor !== undefined;
+  
+  if (isCapacitorBuild) {
+    return {
+      environment: 'production',
+      apiUrl: 'https://task-management-w4ai-swart.vercel.app/api',
+      capabilitiesPath: '/system/capabilities',
+      backendUrl: 'https://task-management-backend-v2mh.onrender.com',
+      imageHostname: 'task-management-backend-v2mh.onrender.com',
+      capacitorServerUrl: 'https://task-management-w4ai-swart.vercel.app',
+      enableAnalytics: false,
+      enableCrashReporting: false,
+      apiTimeout: 30000,
+    };
+  }
+  
   if (!backendUrl && environment === 'production') {
     throw new Error('NEXT_PUBLIC_BACKEND_URL environment variable is required in production');
   }

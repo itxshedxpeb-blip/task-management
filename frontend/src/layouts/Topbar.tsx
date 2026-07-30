@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-import { componentTextSizes } from '@/lib/design-system';
 import { useTheme } from '@/theme/ThemeProvider';
 import { Breadcrumbs } from './Breadcrumbs';
 import { useAuth } from '@/features/auth/AuthContext';

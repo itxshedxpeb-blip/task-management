@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsHexColor, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
 
 export class CreateLabelDto {
   @IsString()

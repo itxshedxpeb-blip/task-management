@@ -11,6 +11,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { AdminLoginDto } from './dto/admin-login.dto';
+import { AdminCreateUserDto, AdminUpdateUserDto } from './dto/admin-user.dto';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
 import { Public } from '../../auth/decorators/public.decorator';
 
@@ -63,8 +64,8 @@ export class AdminController {
   @Post('users')
   @RequirePermissions('admin:user:create')
   @ApiOperation({ summary: 'Create user' })
-  async createUser(@Body() body: { email: string; password: string; name?: string; role?: string; userType?: string }) {
-    const data = await this.adminService.createUser(body);
+  async createUser(@Body() dto: AdminCreateUserDto) {
+    const data = await this.adminService.createUser(dto);
     return { message: 'User created successfully.', data };
   }
 
@@ -83,9 +84,9 @@ export class AdminController {
   @ApiOperation({ summary: 'Update user' })
   async updateUser(
     @Param('id') id: string,
-    @Body() body: { name?: string; role?: string; userType?: string; isActive?: boolean },
+    @Body() dto: AdminUpdateUserDto,
   ) {
-    const data = await this.adminService.updateUser(id, body);
+    const data = await this.adminService.updateUser(id, dto);
     return { message: 'User updated.', data };
   }
 
