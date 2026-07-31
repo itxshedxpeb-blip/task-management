@@ -3,11 +3,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.taskmanagement.app',
   appName: 'Task Management',
-  webDir: '.next',
-  bundledWebRuntime: false,
   server: {
-    url: 'http://10.0.2.2:3000',
-    cleartext: true,
+    url: 'https://task-management-w4ai-swart.vercel.app',
+    cleartext: false,
   },
   plugins: {
     SplashScreen: {

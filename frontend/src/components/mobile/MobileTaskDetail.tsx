@@ -456,7 +456,7 @@ export default function MobileTaskDetail() {
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{task.title}"? This action
+              Are you sure you want to delete &ldquo;{task.title}&rdquo;? This action
               cannot be undone.
             </DialogDescription>
           </DialogHeader>

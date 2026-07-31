@@ -63,28 +63,38 @@ export default function RootLayout({
             __html: `
               (function() {
                 // Set safe area CSS variables before React loads to prevent hydration mismatch
-                if (typeof window !== 'undefined' && document.documentElement) {
-                  const setSafeAreaInsets = () => {
-                    const style = document.documentElement.style;
-                    const computedStyle = getComputedStyle(document.documentElement);
-                    const safeAreaTop = computedStyle.getPropertyValue('safe-area-inset-top') || '0px';
-                    const safeAreaRight = computedStyle.getPropertyValue('safe-area-inset-right') || '0px';
-                    const safeAreaBottom = computedStyle.getPropertyValue('safe-area-inset-bottom') || '0px';
-                    const safeAreaLeft = computedStyle.getPropertyValue('safe-area-inset-left') || '0px';
+                try {
+                  if (typeof window !== 'undefined' && document.documentElement) {
+                    const setSafeAreaInsets = () => {
+                      try {
+                        const style = document.documentElement.style;
+                        const computedStyle = getComputedStyle(document.documentElement);
+                        const safeAreaTop = computedStyle.getPropertyValue('safe-area-inset-top') || '0px';
+                        const safeAreaRight = computedStyle.getPropertyValue('safe-area-inset-right') || '0px';
+                        const safeAreaBottom = computedStyle.getPropertyValue('safe-area-inset-bottom') || '0px';
+                        const safeAreaLeft = computedStyle.getPropertyValue('safe-area-inset-left') || '0px';
+                        
+                        style.setProperty('--safe-area-inset-top', safeAreaTop);
+                        style.setProperty('--safe-area-inset-right', safeAreaRight);
+                        style.setProperty('--safe-area-inset-bottom', safeAreaBottom);
+                        style.setProperty('--safe-area-inset-left', safeAreaLeft);
+                      } catch (e) {
+                        // Silently fail if getComputedStyle is not available
+                        console.warn('Failed to set safe area insets:', e);
+                      }
+                    };
                     
-                    style.setProperty('--safe-area-inset-top', safeAreaTop);
-                    style.setProperty('--safe-area-inset-right', safeAreaRight);
-                    style.setProperty('--safe-area-inset-bottom', safeAreaBottom);
-                    style.setProperty('--safe-area-inset-left', safeAreaLeft);
-                  };
-                  
-                  // Run immediately
-                  setSafeAreaInsets();
-                  
-                  // Also run on load in case values change
-                  if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', setSafeAreaInsets);
+                    // Run immediately
+                    setSafeAreaInsets();
+                    
+                    // Also run on load in case values change
+                    if (document.readyState === 'loading') {
+                      document.addEventListener('DOMContentLoaded', setSafeAreaInsets);
+                    }
                   }
+                } catch (e) {
+                  // Silently fail if script execution fails
+                  console.warn('Safe area script failed:', e);
                 }
               })();
             `,

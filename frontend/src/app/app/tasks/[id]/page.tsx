@@ -225,14 +225,6 @@ function ActivityTimeline({ task }: { task: Task }) {
 }
 
 export default function TaskDetailPage() {
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
-  
-  // Use mobile version for mobile devices
-  if (!isDesktop) {
-    return <MobileTaskDetail />;
-  }
-
-  // Desktop version (original)
   const params = useParams();
   const router = useRouter();
   const taskId = params?.id as string;
@@ -241,6 +233,14 @@ export default function TaskDetailPage() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const [showDelete, setShowDelete] = useState(false);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  // Use mobile version for mobile devices
+  if (!isDesktop) {
+    return <MobileTaskDetail />;
+  }
+
+  // Desktop version (original)
 
   if (isLoading) return <DetailSkeleton />;
 

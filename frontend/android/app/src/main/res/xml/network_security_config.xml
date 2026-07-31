@@ -5,12 +5,6 @@
             <certificates src="system" />
         </trust-anchors>
     </base-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <trust-anchors>
-            <certificates src="system" />
-        </trust-anchors>
-    </domain-config>
     <domain-config>
         <domain includeSubdomains="true">task-management-backend-v2mh.onrender.com</domain>
         <domain includeSubdomains="true">task-management-w4ai-swart.vercel.app</domain>

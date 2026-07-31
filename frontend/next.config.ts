@@ -34,9 +34,9 @@ const nextConfig: NextConfig = {
 
 const pwaConfig = withPWA({
   dest: 'public',
-  register: true,
+  register: false,
   skipWaiting: true,
-  disable: process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production',
+  disable: true,
   buildExcludes: [/middleware-manifest\.json$/, /icon\.svg$/],
 });
 
