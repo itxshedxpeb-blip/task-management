@@ -61,9 +61,11 @@ export default function AdminMobileAppPage() {
         const data = await response.json();
         setLatestVersion(data.data || null);
       } else {
+        // 400 is expected when no APK exists yet, don't log error
         setLatestVersion(null);
       }
     } catch (error) {
+      // Only log unexpected errors (network errors, etc.)
       console.error('Failed to fetch latest version:', error);
       setLatestVersion(null);
     } finally {
@@ -72,32 +74,8 @@ export default function AdminMobileAppPage() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    (async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`${config.backendUrl}/app-version/latest/ANDROID`, { signal: controller.signal });
-        if (!controller.signal.aborted) {
-          if (response.ok) {
-            const data = await response.json();
-            setLatestVersion(data.data || null);
-          } else {
-            setLatestVersion(null);
-          }
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          console.error('Failed to fetch latest version:', error);
-          setLatestVersion(null);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
-      }
-    })();
-    return () => controller.abort();
-  }, []);
+    fetchLatestVersion();
+  }, [fetchLatestVersion]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
