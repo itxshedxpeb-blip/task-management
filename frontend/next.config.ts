@@ -35,7 +35,7 @@ const pwaConfig = withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NEXT_PUBLIC_ENVIRONMENT !== 'production',
-  buildExcludes: [/middleware-manifest\.json$/],
+  buildExcludes: [/middleware-manifest\.json$/, /icon\.svg$/],
 });
 
 export default pwaConfig(nextConfig as unknown as Parameters<typeof withPWA>[0]);
