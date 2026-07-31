@@ -36,12 +36,14 @@ import { cn } from '@/lib/utils';
 import { formatDate, toInputDate } from '@/lib/date-utils';
 import { useTasks, useCreateTask, useDeleteTask, useMoveTask } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import type { TaskStatus, TaskPriority } from '@/features/task-management/types';
 import { STATUS_LABELS, STATUS_TRANSITIONS } from '@/features/task-management/constants/taskConfig';
 import { StatusSmartBadge, PrioritySmartBadge } from '@/features/task-management/components/shared/SmartBadge';
 import { CountdownTimer } from '@/features/task-management/components/shared/CountdownTimer';
 import { getDaysOverdue } from '@/features/task-management/utils/taskFormatters';
 import { GlobalFilterPanel, type GlobalFilters } from '@/features/task-management/components/GlobalFilterPanel';
+import { MobileTaskList } from '@/components/mobile/MobileTaskList';
 
 function TableSkeleton() {
   return (
@@ -121,7 +123,7 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   };
 
   return (
-    <DialogContent className="sm:max-w-lg">
+    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Create Task</DialogTitle>
       </DialogHeader>
@@ -134,37 +136,35 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
           <Label htmlFor="ct-desc">Description</Label>
           <Textarea id="ct-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" rows={3} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Priority</Label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as TaskPriority)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Low">Low</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Urgent">Urgent</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Draft">Draft</SelectItem>
-                <SelectItem value="Todo">Todo</SelectItem>
-                <SelectItem value="InProgress">In Progress</SelectItem>
-                <SelectItem value="OnHold">On Hold</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <Label>Priority</Label>
+          <Select value={priority} onValueChange={(v) => setPriority(v as TaskPriority)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Low">Low</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Urgent">Urgent</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Status</Label>
+          <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Draft">Draft</SelectItem>
+              <SelectItem value="Todo">Todo</SelectItem>
+              <SelectItem value="InProgress">In Progress</SelectItem>
+              <SelectItem value="OnHold">On Hold</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="ct-due">Due Date</Label>
           <Input id="ct-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button type="submit" disabled={createTask.isPending || !title.trim()}>
             {createTask.isPending ? 'Creating...' : 'Create Task'}
@@ -190,6 +190,7 @@ export default function TasksPage() {
   const moveTask = useMoveTask();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pageSize = 15;
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -268,6 +269,35 @@ export default function TasksPage() {
   );
 }
 
+  // Mobile View
+  if (!isDesktop) {
+    return (
+      <>
+        <MobileTaskList
+          tasks={allTasks}
+          isLoading={isLoading}
+          onRefresh={() => refetch()}
+          onCreateTask={() => setCreateOpen(true)}
+          onTaskClick={(task) => router.push(`/app/tasks/${task.id}`)}
+        />
+        
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
+        </Dialog>
+        
+        <DeleteTaskDialog
+          taskId={deleteTaskId || ''}
+          taskTitle={deleteTaskTitle}
+          open={!!deleteTaskId}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTaskId(null);
+          }}
+        />
+      </>
+    );
+  }
+
+  // Desktop View (original)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -517,6 +547,15 @@ export default function TasksPage() {
           </div>
         </div>
       )}
+      
+      <DeleteTaskDialog
+        taskId={deleteTaskId || ''}
+        taskTitle={deleteTaskTitle}
+        open={!!deleteTaskId}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTaskId(null);
+        }}
+      />
     </div>
   );
 }

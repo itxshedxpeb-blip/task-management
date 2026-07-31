@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/theme/ThemeProvider";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { ToastProvider } from "@/components/ui/toast";
 import { ServiceWorkerUpdate } from "@/components/pwa/ServiceWorkerUpdate";
+import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -96,7 +97,6 @@ export default function RootLayout({
             <AuthProvider>{children}<ToastProvider /></AuthProvider>
           </QueryProvider>
         </ThemeProvider>
-        <ServiceWorkerUpdate />
       </body>
     </html>
   );

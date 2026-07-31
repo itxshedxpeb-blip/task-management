@@ -55,7 +55,6 @@ export default function AdminMobileAppPage() {
 
   const fetchLatestVersion = useCallback(async () => {
     try {
-      setIsLoading(true);
       const response = await fetch(`${config.backendUrl}/app-version/latest/ANDROID`);
       if (response.ok) {
         const data = await response.json();
@@ -74,8 +73,30 @@ export default function AdminMobileAppPage() {
   }, []);
 
   useEffect(() => {
-    fetchLatestVersion();
-  }, [fetchLatestVersion]);
+    let ignore = false;
+    const loadLatestVersion = async () => {
+      try {
+        const response = await fetch(`${config.backendUrl}/app-version/latest/ANDROID`);
+        if (ignore) return;
+        if (response.ok) {
+          const data = await response.json();
+          setLatestVersion(data.data || null);
+        } else {
+          setLatestVersion(null);
+        }
+      } catch (error) {
+        if (ignore) return;
+        console.error('Failed to fetch latest version:', error);
+        setLatestVersion(null);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    };
+    loadLatestVersion();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -148,11 +169,11 @@ export default function AdminMobileAppPage() {
         throw new Error(error.message || 'Upload failed');
       }
 
+      setIsLoading(true);
       await fetchLatestVersion();
       setUploadDialogOpen(false);
       resetForm();
-      alert('APK uploaded successfully');
-    } catch (error) {
+      alert('APK uploaded successfully');    } catch (error) {
       console.error('Upload failed:', error);
       alert('Upload failed: ' + (error as Error).message);
     } finally {
@@ -176,6 +197,7 @@ export default function AdminMobileAppPage() {
       });
 
       if (response.ok) {
+        setIsLoading(true);
         await fetchLatestVersion();
         alert('Metadata updated successfully');
       }
@@ -200,6 +222,7 @@ export default function AdminMobileAppPage() {
       });
 
       if (response.ok) {
+        setIsLoading(true);
         await fetchLatestVersion();
         alert('APK deleted successfully');
       }

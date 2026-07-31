@@ -6,6 +6,7 @@ export const ROUTES = {
   adminLogin: '/admin/login',
   adminDashboard: '/admin/dashboard',
   adminEmployees: '/admin/employees',
+  adminEmployeeDetail: (id: string) => `/admin/employees/${id}`,
   adminTasks: '/admin/tasks',
   adminReports: '/admin/reports',
   adminSettings: '/admin/settings',

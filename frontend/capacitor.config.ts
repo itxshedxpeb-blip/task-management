@@ -6,9 +6,8 @@ const config: CapacitorConfig = {
   webDir: '.next',
   bundledWebRuntime: false,
   server: {
-    url: 'https://task-management-w4ai-swart.vercel.app',
-    cleartext: false,
-    androidScheme: 'https',
+    url: 'http://10.0.2.2:3000',
+    cleartext: true,
   },
   plugins: {
     SplashScreen: {

@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   RefreshCw,
   TrendingUp,
-  ArrowUpRight,
   Timer,
   Zap,
 } from 'lucide-react';
@@ -25,6 +24,8 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { adminApi } from '@/modules/admin/services/adminApi';
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { MobileKPICard } from '@/components/mobile/MobileKPICard';
 
 function StatCard({
   label,
@@ -55,6 +56,7 @@ function StatCard({
 }
 
 export default function AdminDashboardPage() {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: () => adminApi.getDashboardStats(),
@@ -104,6 +106,127 @@ export default function AdminDashboardPage() {
   const recentEmployees = d.recentEmployees || [];
   const topEmployees = d.topEmployees || [];
 
+  // Mobile View
+  if (!isDesktop) {
+    return (
+      <div className="space-y-4 p-4 pb-24">
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {kpiCards.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <MobileKPICard
+                key={kpi.label}
+                label={kpi.label}
+                value={kpi.value}
+                icon={Icon}
+                color={kpi.color}
+              />
+            );
+          })}
+        </div>
+
+        {/* Recent Employees Section */}
+        <Card className="mobile-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Recent Employees</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentEmployees.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No employees yet
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {recentEmployees.map((emp: any) => (
+                  <div
+                    key={emp.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-muted/30"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#f97316]/10 flex items-center justify-center">
+                        <span className="text-[#f97316] text-xs font-semibold">
+                          {emp.name
+                            ?.split(' ')
+                            .map((w: string) => w[0])
+                            .join('')
+                            .toUpperCase()
+                            .slice(0, 2)}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {emp.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {emp.email}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={emp.isActive ? 'default' : 'secondary'}
+                      className="text-[10px] h-5"
+                    >
+                      {emp.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Employees Section */}
+        <Card className="mobile-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Top Performers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topEmployees.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No data available
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {topEmployees.map((emp: any, idx: number) => (
+                  <div
+                    key={emp.id || idx}
+                    className="flex items-center justify-between p-3 rounded-xl bg-muted/30"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#f97316]/10 flex items-center justify-center">
+                        <span className="text-[#f97316] text-xs font-semibold">
+                          {emp.name
+                            ?.split(' ')
+                            .map((w: string) => w[0])
+                            .join('')
+                            .toUpperCase()
+                            .slice(0, 2)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {emp.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {emp.completedTasks ?? 0} tasks completed
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-medium text-[#f97316]">
+                      #{idx + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Desktop View (original)
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

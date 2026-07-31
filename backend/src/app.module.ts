@@ -11,6 +11,7 @@ import { PermissionsGuard } from './auth/guards/permissions.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { TaskModule } from './task/task.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { EmployeePerformanceModule } from './modules/employee-performance/employee-performance.module';
 import { DepartmentModule } from './modules/departments/department.module';
 import { NotificationModule } from './modules/notifications/notification.module';
 import { LabelModule } from './modules/labels/label.module';
@@ -39,6 +40,7 @@ import { AppVersionModule } from './modules/app-version/app-version.module';
     AuthModule,
     TaskModule,
     AdminModule,
+    EmployeePerformanceModule,
     DepartmentModule,
     NotificationModule,
     LabelModule,

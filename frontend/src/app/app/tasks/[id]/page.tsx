@@ -36,7 +36,9 @@ import {
   useDeleteTask,
 } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import type { TaskStatus, Task, ChecklistItem, Comment, TaskActivity } from '@/features/task-management/types';
+import MobileTaskDetail from '@/components/mobile/MobileTaskDetail';
 
 const PRIORITY_VARIANT: Record<string, 'destructive' | 'warning' | 'info' | 'secondary'> = {
   Urgent: 'destructive',
@@ -223,6 +225,14 @@ function ActivityTimeline({ task }: { task: Task }) {
 }
 
 export default function TaskDetailPage() {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  
+  // Use mobile version for mobile devices
+  if (!isDesktop) {
+    return <MobileTaskDetail />;
+  }
+
+  // Desktop version (original)
   const params = useParams();
   const router = useRouter();
   const taskId = params?.id as string;
