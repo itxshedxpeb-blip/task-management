@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { config } from '@/lib/config';
+import { getAccessToken } from '@/core/auth/session';
 
 interface AppVersion {
   id: string;
@@ -143,12 +144,13 @@ export default function AdminMobileAppPage() {
       formDataToSend.append('isMandatory', formData.isMandatory.toString());
 
       console.log('Uploading to:', `${config.backendUrl}/app-version/upload`);
-      console.log('Token exists:', !!localStorage.getItem('token'));
+      const token = getAccessToken();
+      console.log('Token exists:', !!token);
       
       const response = await fetch(`${config.backendUrl}/app-version/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: formDataToSend,
       });
@@ -182,11 +184,12 @@ export default function AdminMobileAppPage() {
 
   const handleUpdateMetadata = async () => {
     try {
+      const token = getAccessToken();
       const response = await fetch(`${config.backendUrl}/app-version/ANDROID`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           releaseNotes: formData.releaseNotes,
@@ -205,13 +208,16 @@ export default function AdminMobileAppPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this APK? This cannot be undone.')) return;
+    if (!confirm('Are you sure you want to delete this APK?')) {
+      return;
+    }
 
     try {
+      const token = getAccessToken();
       const response = await fetch(`${config.backendUrl}/app-version/ANDROID`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
