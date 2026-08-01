@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Calendar,
@@ -9,10 +9,8 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  MessageSquare,
   Tag,
   RefreshCw,
-  Send,
   Circle,
   XCircle,
   Timer,
@@ -31,13 +29,12 @@ import { formatDate, formatDateTime } from '@/lib/date-utils';
 import {
   useTaskDetail,
   useUpdateTask,
-  useAddComment,
   useToggleChecklistItem,
   useDeleteTask,
 } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
-import type { TaskStatus, Task, ChecklistItem, Comment, TaskActivity } from '@/features/task-management/types';
+import type { TaskStatus, Task, ChecklistItem, TaskActivity } from '@/features/task-management/types';
 import MobileTaskDetail from '@/components/mobile/MobileTaskDetail';
 
 const PRIORITY_VARIANT: Record<string, 'destructive' | 'warning' | 'info' | 'secondary'> = {
@@ -76,62 +73,6 @@ function DetailSkeleton() {
         </div>
       </div>
     </div>
-  );
-}
-
-function CommentSection({ task }: { task: Task }) {
-  const { user } = useAuth();
-  const addComment = useAddComment();
-  const [commentText, setCommentText] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-    await addComment.mutateAsync({ id: task.id, text: commentText.trim() });
-    setCommentText('');
-  };
-
-  const comments: Comment[] = task.comments || [];
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <MessageSquare className="h-4 w-4" />
-          Comments ({comments.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            placeholder="Add a comment..."
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            className="flex-1"
-          />
-          <Button type="submit" size="icon" disabled={!commentText.trim() || addComment.isPending}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-        {comments.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {comments.map((comment) => (
-              <div key={comment.id} className="p-3 rounded-lg bg-muted/30">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground">{comment.userName}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatDate(comment.createdAt)}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{comment.text}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -227,6 +168,7 @@ function ActivityTimeline({ task }: { task: Task }) {
 export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const taskId = params?.id as string;
   const { user } = useAuth();
   const { data: task, isLoading, error, refetch } = useTaskDetail(taskId);
@@ -234,6 +176,16 @@ export default function TaskDetailPage() {
   const deleteTask = useDeleteTask();
   const [showDelete, setShowDelete] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  const backToEmployee = searchParams?.get('from') === 'employee' ? searchParams?.get('emp') : null;
+
+  const handleBack = () => {
+    if (backToEmployee) {
+      router.push(`/admin/employees/${backToEmployee}`);
+    } else {
+      router.back();
+    }
+  };
 
   // Use mobile version for mobile devices
   if (!isDesktop) {
@@ -247,13 +199,16 @@ export default function TaskDetailPage() {
   if (error || !task) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
         <Card>
           <CardContent className="p-12 text-center">
             <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
             <p className="font-medium mb-1">Failed to load task</p>
+            <p className="text-sm text-muted-foreground mb-3">
+              {error instanceof Error ? error.message : 'Task not found or you do not have permission to view it'}
+            </p>
             <Button onClick={() => refetch()} variant="outline" size="sm" className="mt-3">
               <RefreshCw className="h-4 w-4 mr-2" /> Retry
             </Button>
@@ -278,8 +233,8 @@ export default function TaskDetailPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-2">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+          <Button variant="ghost" size="sm" onClick={handleBack} className="-ml-2">
+            <ArrowLeft className="h-4 w-4 mr-2" /> {backToEmployee ? 'Back to Employee' : 'Back'}
           </Button>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-foreground">{task.title}</h1>
@@ -340,7 +295,6 @@ export default function TaskDetailPage() {
           )}
 
           <ChecklistSection task={task} />
-          <CommentSection task={task} />
           <ActivityTimeline task={task} />
         </div>
 

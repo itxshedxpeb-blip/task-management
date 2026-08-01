@@ -100,8 +100,6 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('Medium');
-  const [status, setStatus] = useState<TaskStatus>('Todo');
-  const [dueDate, setDueDate] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,15 +108,11 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
       title: title.trim(),
       description: description.trim() || undefined,
       priority,
-      status,
-      dueDate: dueDate ? new Date(dueDate) : new Date(),
-      assignedUserId: user?.id || '',
+      assignedUserId: user?.id,
     });
     setTitle('');
     setDescription('');
     setPriority('Medium');
-    setStatus('Todo');
-    setDueDate('');
     onOpenChange(false);
   };
 
@@ -147,22 +141,6 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
               <SelectItem value="Urgent">Urgent</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Draft">Draft</SelectItem>
-              <SelectItem value="Todo">Todo</SelectItem>
-              <SelectItem value="InProgress">In Progress</SelectItem>
-              <SelectItem value="OnHold">On Hold</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="ct-due">Due Date</Label>
-          <Input id="ct-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -222,20 +200,16 @@ export default function TasksPage() {
 
   const tasks = useMemo(() => {
     if (!globalFilters.completion) return allTasks;
-    const now = new Date();
     return allTasks.filter((task) => {
       switch (globalFilters.completion) {
         case 'on-time':
-          return (task.status === 'Completed' || task.status === 'Archived') &&
-            task.completedAt && new Date(task.completedAt) <= new Date(task.dueDate);
+          return task.status === 'Completed';
         case 'late':
-          return (task.status === 'Completed' || task.status === 'Archived') &&
-            task.completedAt && new Date(task.completedAt) > new Date(task.dueDate);
+          return task.status === 'CompletedLate';
         case 'incomplete':
-          return task.status !== 'Completed' && task.status !== 'Archived' && task.status !== 'Cancelled';
+          return task.status === 'Incomplete';
         case 'overdue':
-          return task.status !== 'Completed' && task.status !== 'Archived' && task.status !== 'Cancelled' &&
-            new Date(task.dueDate) < now;
+          return task.status === 'Overdue';
         default:
           return true;
       }

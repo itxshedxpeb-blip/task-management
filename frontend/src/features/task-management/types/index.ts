@@ -22,6 +22,9 @@ export type TaskStatus =
   | 'InProgress'
   | 'OnHold'
   | 'Completed'
+  | 'CompletedLate'
+  | 'Incomplete'
+  | 'Overdue'
   | 'Archived'
   | 'Cancelled';
 
@@ -55,36 +58,6 @@ export interface ChecklistItem {
   order: number;
 }
 
-// ─── Comment ─────────────────────────────────────────────────────────────────────
-
-export interface Comment {
-  id: string;
-  taskId: string;
-  text: string;
-  userId: string;
-  userName: string;
-  createdAt: Date;
-  updatedAt?: Date;
-  isInternal?: boolean; // Admin-only comments
-}
-
-// ─── Attachment ─────────────────────────────────────────────────────────────────
-
-export type AttachmentType = 'Image' | 'PDF' | 'Excel' | 'Word' | 'ZIP' | 'Other';
-
-export interface Attachment {
-  id: string;
-  taskId: string;
-  fileName: string;
-  fileType: AttachmentType;
-  fileSize: number; // in bytes
-  fileUrl: string;
-  uploadedBy: string;
-  uploadedByName: string;
-  uploadedAt: Date;
-  description?: string;
-}
-
 // ─── Task Entity ────────────────────────────────────────────────────────────────
 
 export interface Task {
@@ -99,22 +72,17 @@ export interface Task {
   assignedUserName: string;
   createdBy: string;
   createdByName: string;
-  assignedById?: string;
-  assignedByName?: string;
   completedById?: string;
   completedByName?: string;
-  verifiedById?: string;
-  updatedById?: string;
   
   // Parent/Child
   parentTaskId?: string;
   
   // Dates
   startDate?: Date;
-  dueDate: Date;
+  dueDate?: Date; // Deprecated: No longer used in daily task flow
   reminderDate?: Date;
   completedAt?: Date;
-  verifiedAt?: Date;
   closedAt?: Date;
   startedAt?: Date;
   assignedAt?: Date;
@@ -154,19 +122,8 @@ export interface Task {
   completionNotes?: string;
   completionChecklist?: ChecklistItem[];
   
-  // Verification
-  verifiedBy?: string;
-  verifiedByName?: string;
-  verificationNotes?: string;
-  
   // Checklist
   checklist?: ChecklistItem[];
-  
-  // Comments
-  comments?: Comment[];
-  
-  // Attachments
-  attachments?: Attachment[];
   
   // General Notes
   notes?: string;
@@ -211,9 +168,7 @@ export type TaskActivityType =
   | 'Priority Changed'
   | 'Due Date Changed'
   | 'Progress Updated'
-  | 'Checklist Updated'
-  | 'Comment Added'
-  | 'Attachment Added';
+  | 'Checklist Updated';
 
 export interface TaskActivity {
   id: string;
@@ -369,7 +324,6 @@ export interface CreateTaskDto {
   title: string;
   description?: string;
   assignedUserId: string;
-  dueDate: Date;
   startDate?: Date;
   reminderDate?: Date;
   priority: TaskPriority;
@@ -389,7 +343,6 @@ export interface UpdateTaskDto {
   title?: string;
   description?: string;
   assignedUserId?: string;
-  dueDate?: Date;
   startDate?: Date;
   reminderDate?: Date;
   priority?: TaskPriority;
@@ -458,8 +411,8 @@ export interface TaskFilter {
   assignedUserId?: string;
   linkedModule?: LinkedModule;
   search?: string;
-  dueDateFrom?: Date;
-  dueDateTo?: Date;
+  createdAtFrom?: Date;
+  createdAtTo?: Date;
   completedDateFrom?: Date;
   completedDateTo?: Date;
   tags?: string[];

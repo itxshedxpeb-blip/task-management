@@ -31,6 +31,14 @@ export class EmployeePerformanceController {
     return { message: 'Employee fetched.', data };
   }
 
+  @Get(':id/today')
+  @RequirePermissions('admin:user:read')
+  @ApiOperation({ summary: "Get an employee's today analytics" })
+  async today(@Param('id') id: string) {
+    const data = await this.employeePerformanceService.getEmployeeToday(id);
+    return { message: 'Employee today analytics fetched.', data };
+  }
+
   @Get(':id/tasks')
   @RequirePermissions('admin:user:read')
   @ApiOperation({ summary: 'List an employee\'s assigned tasks' })

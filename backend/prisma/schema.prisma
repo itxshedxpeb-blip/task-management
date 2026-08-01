@@ -40,7 +40,6 @@ model User {
   sessions            Session[]
   assignedTasks       Task[]             @relation("TaskAssignee")
   createdTasks        Task[]             @relation("TaskCreator")
-  comments            TaskComment[]
   taskWatchers        TaskWatcher[]
   timeEntries         TimeEntry[]
 
@@ -148,14 +147,12 @@ model Task {
   dueDate           DateTime?
   reminderDate      DateTime?
   completedAt       DateTime?
-  verifiedAt        DateTime?
   closedAt          DateTime?
   priority          TaskPriority      @default(Medium)
   category          TaskCategory?
   progress          Int               @default(0)
   estimatedHours    Decimal?
   timeSpent         Decimal?
-  verifiedByName    String?
   notes             String?
   internalNotes     String?
   tags              String[]
@@ -172,14 +169,10 @@ model Task {
   parentTaskId      String?
   slaBreached       Boolean           @default(false)
   slaDueDate        DateTime?
-  assignedById      String?
-  assignedByName    String?
   completedById     String?
   completedByName   String?
   isFavorite        Boolean           @default(false)
   isPinned          Boolean           @default(false)
-  updatedById       String?
-  verifiedById      String?
   status            TaskStatus        @default(Todo)
   startedAt         DateTime?
   assignee          User?             @relation("TaskAssignee", fields: [assignedUserId], references: [id])
@@ -187,9 +180,7 @@ model Task {
   parentTask        Task?             @relation("Subtasks", fields: [parentTaskId], references: [id])
   subtasks          Task[]            @relation("Subtasks")
   activities        TaskActivityLog[]
-  attachments       TaskAttachment[]
   checklist         TaskChecklist[]
-  comments          TaskComment[]
   dependencies      TaskDependency[]
   labels            TaskLabel[]
   watchers          TaskWatcher[]
@@ -217,40 +208,6 @@ model TaskChecklist {
   order       Int       @default(0)
   createdAt   DateTime  @default(now())
   task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@index([taskId])
-}
-
-model TaskComment {
-  id         String   @id @default(uuid())
-  taskId     String
-  content    String
-  authorId   String
-  authorName String
-  isInternal Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  isDeleted  Boolean  @default(false)
-  mentions   String[]
-  author     User     @relation(fields: [authorId], references: [id])
-  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-
-  @@index([taskId])
-  @@index([taskId, createdAt])
-}
-
-model TaskAttachment {
-  id             String   @id @default(uuid())
-  taskId         String
-  fileName       String
-  fileType       String
-  fileSize       Int
-  fileUrl        String
-  uploadedBy     String
-  uploadedByName String
-  description    String?
-  createdAt      DateTime @default(now())
-  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
 }
@@ -514,6 +471,9 @@ enum TaskStatus {
   InProgress
   OnHold
   Completed
+  CompletedLate
+  Incomplete
+  Overdue
   Archived
   Cancelled
 }

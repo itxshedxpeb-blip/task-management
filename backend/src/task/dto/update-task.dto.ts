@@ -30,14 +30,6 @@ export class UpdateTaskDto {
   description?: string;
 
   @IsOptional()
-  @IsString()
-  assignedUserId?: string;
-
-  @IsOptional()
-  @IsString()
-  assignedUserName?: string;
-
-  @IsOptional()
   @IsDateString()
   dueDate?: string;
 

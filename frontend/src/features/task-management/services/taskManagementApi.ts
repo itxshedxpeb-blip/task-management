@@ -54,8 +54,8 @@ export const taskManagementApi = guardModuleApi('task', {
     if (query?.filter?.priority) params.priority = query.filter.priority;
     if (query?.filter?.assignedUserId) params.assignedUserId = query.filter.assignedUserId;
     if (query?.filter?.linkedModule) params.linkedModule = query.filter.linkedModule;
-    if (query?.filter?.dueDateFrom) params.dueDateFrom = String(query.filter.dueDateFrom);
-    if (query?.filter?.dueDateTo) params.dueDateTo = String(query.filter.dueDateTo);
+    if (query?.filter?.createdAtFrom) params.createdAtFrom = String(query.filter.createdAtFrom);
+    if (query?.filter?.createdAtTo) params.createdAtTo = String(query.filter.createdAtTo);
     const res = await api.get<BackendResponse<PaginatedResponse<Task>>>('/tasks', { params });
     return res.data.rows;
   },

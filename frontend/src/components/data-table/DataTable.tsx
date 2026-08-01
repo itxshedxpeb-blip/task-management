@@ -184,7 +184,7 @@ export const DataTable = function DataTable<T = Record<string, any>>({
         setSortDirection('asc');
       }
     }
-  }, [effectiveSortColumn, effectiveSortDirection, sortColumn, sortDirection, onSortChange]);
+  }, [effectiveSortColumn, effectiveSortDirection, sortColumn, onSortChange]);
 
   const handlePageChange = useCallback((page: number) => {
     const safePage = Math.max(1, page);

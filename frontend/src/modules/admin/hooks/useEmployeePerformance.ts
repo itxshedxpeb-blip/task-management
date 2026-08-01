@@ -48,3 +48,12 @@ export function useEmployeeReport(id?: string | null) {
     staleTime: 60 * 1000,
   });
 }
+
+export function useEmployeeToday(id?: string | null) {
+  return useQuery({
+    queryKey: ['admin-employee-today', id],
+    queryFn: () => employeePerformanceApi.getEmployeeToday(id!),
+    enabled: Boolean(id),
+    staleTime: 30 * 1000,
+  });
+}

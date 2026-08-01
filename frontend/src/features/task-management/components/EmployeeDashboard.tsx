@@ -37,48 +37,46 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({
   onTaskClick,
   onCreateTask,
 }) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const nextWeek = new Date(today);
-  nextWeek.setDate(nextWeek.getDate() + 7);
-
   const employeeData = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
     // Filter tasks for current employee
     const myTasks = tasks.filter(task => task.assignedUserId === currentUserId);
 
     const todayTasks = myTasks.filter(task => {
-      const dueDate = new Date(task.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate.getTime() === today.getTime();
+      const createdDate = new Date(task.createdAt);
+      createdDate.setHours(0, 0, 0, 0);
+      return createdDate.getTime() === today.getTime();
     });
 
     const dueToday = myTasks.filter(task => {
-      const dueDate = new Date(task.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate.getTime() === today.getTime() && task.status !== 'Completed';
+      const createdDate = new Date(task.createdAt);
+      createdDate.setHours(0, 0, 0, 0);
+      return createdDate.getTime() === today.getTime() && task.status !== 'Completed';
     });
 
     const dueTomorrow = myTasks.filter(task => {
-      const dueDate = new Date(task.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate.getTime() === tomorrow.getTime() && task.status !== 'Completed';
+      const createdDate = new Date(task.createdAt);
+      createdDate.setHours(0, 0, 0, 0);
+      return createdDate.getTime() === tomorrow.getTime() && task.status !== 'Completed';
     });
 
-    const overdue = myTasks.filter(task => {
-      const dueDate = new Date(task.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate.getTime() < today.getTime() && task.status !== 'Completed';
-    });
+    const overdue = myTasks.filter(task => 
+      task.status === 'Overdue' || task.status === 'CompletedLate'
+    );
 
     const upcoming = myTasks.filter(task => {
-      const dueDate = new Date(task.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate.getTime() > today.getTime() && 
-             dueDate.getTime() <= nextWeek.getTime() && 
+      const createdDate = new Date(task.createdAt);
+      createdDate.setHours(0, 0, 0, 0);
+      return createdDate.getTime() > today.getTime() && 
+             createdDate.getTime() <= nextWeek.getTime() && 
              task.status !== 'Completed';
     });
 

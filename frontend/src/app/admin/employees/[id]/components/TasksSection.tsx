@@ -31,6 +31,8 @@ import { PriorityBadge } from '@/features/task-management/components/shared/Prio
 import type { TaskCategory, TaskPriority, TaskStatus } from '@/features/task-management/types';
 import { useEmployeeTasks } from '@/modules/admin/hooks/useEmployeePerformance';
 import type { EmployeeTaskRow } from '@/modules/admin/types/employeePerformance';
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import MobileRichTaskCard from '@/components/mobile/MobileRichTaskCard';
 
 const PAGE_SIZE = 10;
 
@@ -49,7 +51,7 @@ const CATEGORY_OPTIONS: TaskCategory[] = [
   'Other',
 ];
 
-type SortKey = 'createdAt' | 'dueDate' | 'completedAt' | 'priority' | 'progress' | 'title';
+type SortKey = 'createdAt' | 'completedAt' | 'priority' | 'progress' | 'title';
 
 function SortableHeader({
   label,
@@ -84,6 +86,7 @@ function SortableHeader({
 }
 
 export function TasksSection({ employeeId }: { employeeId: string }) {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | TaskStatus>('all');
   const [priority, setPriority] = useState<'all' | TaskPriority>('all');
@@ -124,11 +127,7 @@ export function TasksSection({ employeeId }: { employeeId: string }) {
   };
 
   const isOverdue = (row: EmployeeTaskRow) =>
-    row.dueDate &&
-    row.status !== 'Completed' &&
-    row.status !== 'Archived' &&
-    row.status !== 'Cancelled' &&
-    dayjs(row.dueDate).isBefore(dayjs(), 'day');
+    row.status === 'Overdue' || row.status === 'CompletedLate';
 
   return (
     <Card id="tasks" className="scroll-mt-24">
@@ -182,6 +181,38 @@ export function TasksSection({ employeeId }: { employeeId: string }) {
             <p className="mb-2 text-sm text-muted-foreground">Failed to load tasks.</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
           </div>
+        ) : !isDesktop ? (
+          <div className="space-y-3">
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-28 rounded-2xl bg-muted/40 animate-pulse" />
+              ))
+            ) : rows.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-muted-foreground">No tasks match the current filters.</p>
+              </div>
+            ) : (
+              rows.map((row) => (
+                <MobileRichTaskCard
+                  key={row.id}
+                  task={{
+                    id: row.id,
+                    taskId: row.taskId,
+                    title: row.title,
+                    status: row.status,
+                    priority: row.priority,
+                    category: row.category,
+                    progress: row.progress,
+                    createdAt: row.createdAt,
+                    completedAt: row.completedAt,
+                    assignedUserName: row.assignedUserName,
+                    createdByName: row.createdByName,
+                  }}
+                  href={`/app/tasks/${row.id}`}
+                />
+              ))
+            )}
+          </div>
         ) : (
           <div className="overflow-x-auto rounded-md border">
             <Table>
@@ -200,9 +231,6 @@ export function TasksSection({ employeeId }: { employeeId: string }) {
                   <TableHead className="hidden sm:table-cell">
                     <SortableHeader label="Created" sortKey="createdAt" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
                   </TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    <SortableHeader label="Due" sortKey="dueDate" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
-                  </TableHead>
                   <TableHead className="w-[40px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -210,19 +238,21 @@ export function TasksSection({ employeeId }: { employeeId: string }) {
                 {isLoading ? (
                   Array.from({ length: 6 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell colSpan={9}><Skeleton className="h-6 w-full" /></TableCell>
+                      <TableCell colSpan={8}><Skeleton className="h-6 w-full" /></TableCell>
                     </TableRow>
                   ))
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
                       No tasks match the current filters.
                     </TableCell>
                   </TableRow>
                 ) : (
                   rows.map((row) => (
                     <TableRow key={row.id}>
-                      <TableCell className="text-xs tabular-nums text-muted-foreground">#{row.taskId}</TableCell>
+                      <TableCell className="text-xs tabular-nums text-muted-foreground">
+                        TSK-{String(row.taskId).padStart(3, '0')}
+                      </TableCell>
                       <TableCell className="max-w-[220px]">
                         <Link
                           href={`/app/tasks/${row.id}`}
@@ -241,9 +271,6 @@ export function TasksSection({ employeeId }: { employeeId: string }) {
                         </div>
                       </TableCell>
                       <TableCell className="hidden text-xs text-muted-foreground sm:table-cell">{formatDate(row.createdAt)}</TableCell>
-                      <TableCell className={cn('hidden text-xs sm:table-cell', isOverdue(row) ? 'font-semibold text-red-500' : 'text-muted-foreground')}>
-                        {formatDate(row.dueDate)}
-                      </TableCell>
                       <TableCell>
                         <Button asChild variant="ghost" size="icon" className="h-7 w-7" title="Open task">
                           <Link href={`/app/tasks/${row.id}`}>

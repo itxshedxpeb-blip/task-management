@@ -6,10 +6,7 @@ import { ProgressBar } from '@/features/task-management/components/shared/Progre
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   Legend,
   ResponsiveContainer,
   Tooltip,
@@ -70,7 +67,7 @@ function ChartCard({
   );
 }
 
-function DistributionBars({
+function DistributionList({
   title,
   data,
 }: {
@@ -78,6 +75,7 @@ function DistributionBars({
   data: Record<string, number>;
 }) {
   const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
   const colorMap = title.includes('Status')
     ? STATUS_COLORS
     : title.includes('Priority')
@@ -85,27 +83,41 @@ function DistributionBars({
       : undefined;
 
   return (
-    <ChartCard title={`${title} Distribution`}>
-      {entries.length === 0 ? (
-        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-          No data
-        </div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={entries.map(([name, value]) => ({ name, value }))} layout="vertical" margin={{ top: 0, right: 24, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-            <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-            <YAxis type="category" dataKey="name" width={92} tick={{ fontSize: 11 }} />
-            <Tooltip cursor={{ fill: 'var(--muted)' }} />
-            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-              {entries.map((entry) => (
-                <Cell key={entry[0]} fill={colorMap?.[entry[0]] ?? CATEGORY_PALETTE[0]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </ChartCard>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold">{title} Distribution</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4">
+        {entries.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">No data</p>
+        ) : (
+          <div className="space-y-3">
+            {entries.map(([name, value], index) => (
+              <div key={name}>
+                <div className="mb-1 flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 break-words text-xs font-medium text-foreground [overflow-wrap:anywhere]">
+                    {name}
+                  </span>
+                  <span className="flex-shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
+                    {value}
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${total > 0 ? (value / total) * 100 : 0}%`,
+                      backgroundColor:
+                        colorMap?.[name] ?? CATEGORY_PALETTE[index % CATEGORY_PALETTE.length],
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -168,38 +180,9 @@ export function PerformanceCharts({ report }: { report: EmployeeReport }) {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Weekly Trend (Last 12 Weeks)">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={charts.weeklyTrend} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={1} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="created" name="Created" fill={CREATED_COLOR} radius={[2, 2, 0, 0]} />
-              <Bar dataKey="completed" name="Completed" fill={COMPLETED_COLOR} radius={[2, 2, 0, 0]} />
-              <Bar dataKey="overdue" name="Overdue" fill={OVERDUE_COLOR} radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Monthly Trend (Last 12 Months)">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={charts.monthlyTrend} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={1} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="created" name="Created" fill={CREATED_COLOR} radius={[2, 2, 0, 0]} />
-              <Bar dataKey="completed" name="Completed" fill={COMPLETED_COLOR} radius={[2, 2, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <DistributionBars title="Category" data={charts.byCategory} />
-        <DistributionBars title="Status" data={charts.byStatus} />
-        <DistributionBars title="Priority" data={charts.byPriority} />
+        <DistributionList title="Category" data={charts.byCategory} />
+        <DistributionList title="Status" data={charts.byStatus} />
+        <DistributionList title="Priority" data={charts.byPriority} />
       </div>
     </div>
   );

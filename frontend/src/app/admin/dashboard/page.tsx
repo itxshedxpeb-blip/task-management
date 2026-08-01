@@ -25,7 +25,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { adminApi } from '@/modules/admin/services/adminApi';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
-import { MobileKPICard } from '@/components/mobile/MobileKPICard';
+import { MobileAdminDashboard } from '@/components/mobile/MobileAdminDashboard';
+import { useDashboardTaskKPIs } from '@/features/task-management/hooks/useTaskManagement';
 
 function StatCard({
   label,
@@ -61,8 +62,10 @@ export default function AdminDashboardPage() {
     queryKey: ['admin-dashboard'],
     queryFn: () => adminApi.getDashboardStats(),
   });
+  const { data: kpis } = useDashboardTaskKPIs();
 
   const d = (stats as any)?.data || stats || {};
+  const dKpis = (kpis as any)?.data || kpis || null;
 
   if (isLoading) {
     return (
@@ -92,137 +95,35 @@ export default function AdminDashboardPage() {
     );
   }
 
+  const completedTasks = dKpis?.completedTasks ?? d.completedTasks ?? 0;
+  const completedOnTime = dKpis?.completedOnTime ?? d.completedOnTime ?? 0;
+  const onTimeRate = completedTasks > 0 ? Math.round((completedOnTime / completedTasks) * 100) : 0;
+
   const kpiCards = [
     { label: 'Total Employees', value: d.totalEmployees ?? 0, icon: Users, color: 'bg-[#f97316]/10 text-[#f97316]' },
-    { label: 'Active Employees', value: d.activeEmployees ?? 0, icon: Users, color: 'bg-emerald-500/10 text-emerald-500' },
-    { label: 'Total Tasks', value: d.totalTasks ?? 0, icon: CheckSquare, color: 'bg-blue-500/10 text-blue-500' },
-    { label: 'Completed Tasks', value: d.completedTasks ?? 0, icon: TrendingUp, color: 'bg-emerald-500/10 text-emerald-500' },
-    { label: 'Completed On Time', value: d.completedOnTime ?? 0, icon: Zap, color: 'bg-sky-500/10 text-sky-500' },
-    { label: 'Completed Late', value: d.completedLate ?? 0, icon: Timer, color: 'bg-orange-500/10 text-orange-500' },
-    { label: 'Pending Tasks', value: d.pendingTasks ?? 0, icon: Clock, color: 'bg-amber-500/10 text-amber-500' },
-    { label: 'Overdue Tasks', value: d.overdueTasks ?? 0, icon: AlertTriangle, color: 'bg-red-500/10 text-red-500' },
+    { label: 'Active Tasks', value: d.activeTasks ?? 0, icon: CheckSquare, color: 'bg-blue-500/10 text-blue-500' },
+    { label: 'Completed Tasks', value: completedTasks, icon: TrendingUp, color: 'bg-emerald-500/10 text-emerald-500' },
+    { label: 'On-Time Rate', value: `${onTimeRate}%`, icon: Zap, color: 'bg-sky-500/10 text-sky-500' },
+    { label: 'Completed Late', value: dKpis?.completedLate ?? d.completedLate ?? 0, icon: Timer, color: 'bg-orange-500/10 text-orange-500' },
+    { label: 'Completed Today', value: dKpis?.completedToday ?? 0, icon: CheckSquare, color: 'bg-emerald-500/10 text-emerald-500' },
+    { label: 'Open Tasks', value: dKpis?.openTasks ?? 0, icon: Clock, color: 'bg-amber-500/10 text-amber-500' },
+    { label: 'Overdue Tasks', value: dKpis?.overdueTasks ?? d.overdueTasks ?? 0, icon: AlertTriangle, color: 'bg-red-500/10 text-red-500' },
   ];
 
   const recentEmployees = d.recentEmployees || [];
-  const topEmployees = d.topEmployees || [];
+  const topEmployees = dKpis?.topPerformers || d.topEmployees || [];
 
-  // Mobile View
+  // Mobile View (Today-first)
   if (!isDesktop) {
     return (
-      <div className="space-y-4 p-4 pb-24">
-        {/* KPI Cards Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {kpiCards.map((kpi) => {
-            const Icon = kpi.icon;
-            return (
-              <MobileKPICard
-                key={kpi.label}
-                label={kpi.label}
-                value={kpi.value}
-                icon={Icon}
-                color={kpi.color}
-              />
-            );
-          })}
-        </div>
-
-        {/* Recent Employees Section */}
-        <Card className="mobile-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Recent Employees</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentEmployees.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No employees yet
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {recentEmployees.map((emp: any) => (
-                  <div
-                    key={emp.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-muted/30"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#f97316]/10 flex items-center justify-center">
-                        <span className="text-[#f97316] text-xs font-semibold">
-                          {emp.name
-                            ?.split(' ')
-                            .map((w: string) => w[0])
-                            .join('')
-                            .toUpperCase()
-                            .slice(0, 2)}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {emp.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {emp.email}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={emp.isActive ? 'default' : 'secondary'}
-                      className="text-[10px] h-5"
-                    >
-                      {emp.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Top Employees Section */}
-        <Card className="mobile-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Top Performers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topEmployees.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No data available
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {topEmployees.map((emp: any, idx: number) => (
-                  <div
-                    key={emp.id || idx}
-                    className="flex items-center justify-between p-3 rounded-xl bg-muted/30"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#f97316]/10 flex items-center justify-center">
-                        <span className="text-[#f97316] text-xs font-semibold">
-                          {emp.name
-                            ?.split(' ')
-                            .map((w: string) => w[0])
-                            .join('')
-                            .toUpperCase()
-                            .slice(0, 2)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {emp.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {emp.completedTasks ?? 0} tasks completed
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-medium text-[#f97316]">
-                      #{idx + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <MobileAdminDashboard
+        stats={d}
+        kpis={dKpis}
+        isLoading={isLoading}
+        onRefresh={() => {
+          refetch();
+        }}
+      />
     );
   }
 
@@ -321,16 +222,16 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="space-y-3">
                 {topEmployees.map((emp: any, idx: number) => (
-                  <div key={emp.id || idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div key={emp.id || emp.employeeId || idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[#f97316]/10 flex items-center justify-center">
                         <span className="text-[#f97316] text-xs font-semibold">
-                          {emp.name?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
+                          {(emp.name || emp.employeeName)?.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">{emp.name}</p>
-                        <p className="text-xs text-muted-foreground">{emp.completedTasks ?? 0} tasks completed</p>
+                        <p className="text-sm font-medium text-foreground">{emp.name || emp.employeeName}</p>
+                        <p className="text-xs text-muted-foreground">{(emp.completedTasks ?? emp.tasksCompleted ?? 0)} tasks completed</p>
                       </div>
                     </div>
                     <span className="text-xs font-medium text-[#f97316]">#{idx + 1}</span>

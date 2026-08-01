@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
@@ -29,6 +30,8 @@ async function bootstrap() {
     request.requestId = requestId;
     reply.header('X-Request-ID', requestId);
   });
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   app.useGlobalPipes(new GlobalValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());

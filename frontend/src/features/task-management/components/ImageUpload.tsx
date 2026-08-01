@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Upload, X, ZoomIn, Image as ImageIcon } from 'lucide-react';
@@ -159,10 +160,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               key={`${file.name}-${index}`}
               className="relative group overflow-hidden aspect-square"
             >
-              <img
+              <Image
                 src={previewUrls[index]}
                 alt={file.name}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                className="object-cover"
               />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <Button
@@ -214,9 +217,11 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             <DialogTitle>Image Preview</DialogTitle>
           </DialogHeader>
           {previewImage && (
-            <img
+            <Image
               src={previewImage}
               alt="Preview"
+              width={1600}
+              height={1200}
               className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
             />
           )}

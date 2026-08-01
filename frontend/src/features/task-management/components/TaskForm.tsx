@@ -23,7 +23,6 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
     title: task?.title || '',
     description: task?.description || '',
     assignedUserId: task?.assignedUserId || '',
-    dueDate: toInputDate(task?.dueDate),
     startDate: toInputDate(task?.startDate),
     priority: (task?.priority || 'Medium') as TaskPriority,
     linkedModule: (task?.linkedModule || 'General') as LinkedModule,
@@ -39,22 +38,12 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.startDate && formData.dueDate) {
-      const start = new Date(formData.startDate);
-      const due = new Date(formData.dueDate);
-      if (start > due) {
-        alert('Start date must be before due date');
-        return;
-      }
-    }
-
     const selectedUser = users.find((u: any) => u.id === formData.assignedUserId);
 
     const dto: CreateTaskDto = {
       title: formData.title,
       description: formData.description,
       assignedUserId: formData.assignedUserId,
-      dueDate: new Date(formData.dueDate),
       startDate: formData.startDate ? new Date(formData.startDate) : undefined,
       priority: formData.priority,
       linkedModule: formData.linkedModule,
@@ -110,16 +99,6 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
             type="date"
             value={formData.startDate || ''}
             onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-          />
-        </div>
-        <div>
-          <Label htmlFor="dueDate">Due Date *</Label>
-          <Input
-            id="dueDate"
-            type="date"
-            value={formData.dueDate || ''}
-            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-            required
           />
         </div>
         <div>

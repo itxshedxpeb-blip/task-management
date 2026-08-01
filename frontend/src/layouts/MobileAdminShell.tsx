@@ -34,21 +34,22 @@ import type { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   title: string;
-  href: string;
+  href?: string;
   icon: LucideIcon;
+  onClick?: () => void;
 }
 
 const BOTTOM_NAV_ITEMS: NavItem[] = [
   { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { title: 'Employees', href: '/admin/employees', icon: Users },
   { title: 'Tasks', href: '/admin/tasks', icon: CheckSquare },
-  { title: 'More', href: '/admin/reports', icon: Menu },
+  { title: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { title: 'More', icon: Menu, onClick: () => undefined },
 ];
 
 const MORE_MENU_ITEMS: NavItem[] = [
-  { title: 'Reports', href: '/admin/reports', icon: BarChart3 },
-  { title: 'Mobile App', href: '/admin/mobile-app', icon: Smartphone },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
+  { title: 'Mobile App', href: '/admin/mobile-app', icon: Smartphone },
 ];
 
 interface MobileAdminShellProps {
@@ -73,6 +74,7 @@ export function MobileAdminShell({
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const initials = user?.name
     ? user.name
@@ -83,7 +85,14 @@ export function MobileAdminShell({
         .slice(0, 2)
     : 'SA';
 
-  const isMorePage = pathname === '/admin/reports';
+  const isMorePage =
+    pathname === '/admin/settings' || pathname === '/admin/mobile-app';
+
+  const navItems = BOTTOM_NAV_ITEMS.map((item) =>
+    item.title === 'More'
+      ? { ...item, onClick: () => setMoreOpen(true) }
+      : item
+  );
 
   // Use bottom nav for mobile, regular shell for desktop
   if (isDesktop) {
@@ -92,9 +101,9 @@ export function MobileAdminShell({
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       {/* App Bar */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
+      <header className="flex-shrink-0 bg-background/95 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           {/* Left side */}
           <div className="flex items-center gap-3">
@@ -212,36 +221,64 @@ export function MobileAdminShell({
       </header>
 
       {/* Main Content */}
-      <main className={cn('flex-1 overflow-y-auto', className)}>
-        {children}
+      <main className={cn('flex-1 overflow-y-auto -webkit-overflow-scrolling: touch', className)} style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="pb-20">
+          {children}
+        </div>
       </main>
 
       {/* Bottom Navigation */}
-      {!isMorePage && (
-        <BottomNavigation items={BOTTOM_NAV_ITEMS} />
-      )}
+      <BottomNavigation items={navItems} activeHref={isMorePage ? pathname : undefined} />
 
-      {/* More Menu for "More" tab */}
-      {isMorePage && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50 safe-area-bottom">
-          <div className="p-4 grid grid-cols-2 gap-3">
-            {MORE_MENU_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Button
-                  key={item.href}
-                  variant={isActive ? 'default' : 'outline'}
-                  className="h-14 justify-start gap-3"
-                  onClick={() => router.push(item.href)}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.title}</span>
-                </Button>
-              );
-            })}
+      {/* More Menu bottom sheet */}
+      {moreOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 animate-in fade-in"
+            onClick={() => setMoreOpen(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl border-t border-border animate-in slide-in-from-bottom-4">
+            <div className="mx-auto mt-3 mb-2 h-1 w-10 rounded-full bg-muted" />
+            <div className="px-4 pb-6 pt-2 space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground px-1">
+                More Options
+              </h2>
+              {MORE_MENU_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isItemActive = pathname === item.href;
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => {
+                      setMoreOpen(false);
+                      router.push(item.href!);
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all active:scale-[0.98]',
+                      isItemActive
+                        ? 'border-primary/40 bg-primary/5'
+                        : 'border-border bg-muted/20'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0',
+                        isItemActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      {item.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

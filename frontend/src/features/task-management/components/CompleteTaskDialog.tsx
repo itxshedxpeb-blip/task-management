@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -186,12 +187,14 @@ export const CompleteTaskDialog: React.FC<CompleteTaskDialogProps> = ({
                   {existingBeforeImages.slice(0, 4).map((file, index) => (
                     <div
                       key={`${file.name}-${index}`}
-                      className="aspect-square rounded-lg overflow-hidden bg-muted"
+                      className="relative aspect-square rounded-lg overflow-hidden bg-muted"
                     >
-                      <img
+                      <Image
                         src={URL.createObjectURL(file)}
                         alt={`Before ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="96px"
+                        className="object-cover"
                       />
                     </div>
                   ))}

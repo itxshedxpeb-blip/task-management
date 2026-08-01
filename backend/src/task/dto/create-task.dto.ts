@@ -11,7 +11,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import {
-  TaskStatusFilter,
   TaskPriorityFilter,
   TaskCategoryFilter,
 } from './get-tasks.dto';
@@ -28,18 +27,6 @@ export class CreateTaskDto {
   description?: string;
 
   @IsOptional()
-  @IsString()
-  assignedUserId?: string;
-
-  @IsOptional()
-  @IsString()
-  assignedUserName?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dueDate?: string;
-
-  @IsOptional()
   @IsDateString()
   startDate?: string;
 
@@ -50,10 +37,6 @@ export class CreateTaskDto {
   @IsOptional()
   @IsEnum(TaskPriorityFilter)
   priority?: TaskPriorityFilter;
-
-  @IsOptional()
-  @IsEnum(TaskStatusFilter)
-  status?: TaskStatusFilter;
 
   @IsOptional()
   @IsEnum(TaskCategoryFilter)
@@ -82,4 +65,22 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   slaDueDate?: string;
+
+  @IsOptional()
+  @IsString()
+  assignedUserId?: string;
+
+  // Self-assignment for employees, admin can assign to others
+}
+
+// Add validation pipe logging
+export class CreateTaskDtoValidationPipe {
+  transform(value: any) {
+    console.log('[CreateTaskDtoValidationPipe] Incoming DTO:', {
+      title: value?.title,
+      assignedUserId: value?.assignedUserId,
+      priority: value?.priority,
+    });
+    return value;
+  }
 }

@@ -35,7 +35,6 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assignedUserId, setAssignedUserId] = useState('');
-  const [dueDate, setDueDate] = useState<Date | undefined>();
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [reminderDate, setReminderDate] = useState<Date | undefined>();
   const [priority, setPriority] = useState<TaskPriority>('Medium');
@@ -51,7 +50,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
 
   const handleSubmit = () => {
-    if (!title.trim() || !assignedUserId || !dueDate) {
+    if (!title.trim() || !assignedUserId) {
       return;
     }
 
@@ -59,7 +58,6 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
       title: title.trim(),
       description: description.trim() || undefined,
       assignedUserId,
-      dueDate,
       startDate,
       reminderDate,
       priority,
@@ -85,7 +83,6 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     setTitle('');
     setDescription('');
     setAssignedUserId('');
-    setDueDate(undefined);
     setStartDate(undefined);
     setReminderDate(undefined);
     setPriority('Medium');
@@ -116,7 +113,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
     return [];
   };
 
-  const isValid = title.trim() && assignedUserId && dueDate;
+  const isValid = title.trim() && assignedUserId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -181,7 +178,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                 </Select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="startDate">Start Date</Label>
                   <Input
@@ -189,19 +186,6 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                     type="date"
                     value={toInputDate(startDate)}
                     onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : undefined)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="dueDate" className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                    Due Date
-                  </Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={toInputDate(dueDate)}
-                    onChange={(e) => setDueDate(e.target.value ? new Date(e.target.value) : undefined)}
                     className="mt-1"
                   />
                 </div>

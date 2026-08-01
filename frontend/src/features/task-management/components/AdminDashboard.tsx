@@ -98,13 +98,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const employeeTasks = tasks.filter(t => t.assignedUserId === employee.id);
       const completed = employeeTasks.filter(t => t.status === 'Completed').length;
       const inProgress = employeeTasks.filter(t => t.status === 'InProgress').length;
-      const overdue = employeeTasks.filter(t => {
-        const dueDate = new Date(t.dueDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        dueDate.setHours(0, 0, 0, 0);
-        return dueDate.getTime() < today.getTime() && t.status !== 'Completed';
-      }).length;
+      const overdue = employeeTasks.filter(t => 
+        t.status === 'Overdue' || t.status === 'CompletedLate'
+      ).length;
 
       return {
         name: employee.name,

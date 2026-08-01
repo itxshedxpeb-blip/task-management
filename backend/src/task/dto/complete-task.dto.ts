@@ -1,46 +1,8 @@
-import {
-  IsString,
-  IsOptional,
-  IsNumber,
-  IsArray,
-  IsObject,
-  ValidateNested,
-  MinLength,
-  Min,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-
-export class CompletionProofDto {
-  @IsArray()
-  @IsString({ each: true })
-  afterImages: string[];
-
-  @IsOptional()
-  @IsString()
-  videoUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  notes?: string;
-}
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CompleteTaskDto {
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CompletionProofDto)
-  completionProof: CompletionProofDto;
-
+  @IsOptional()
   @IsString()
-  @MinLength(1)
-  completionNotes: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  timeSpent?: number;
-
-  @IsOptional()
-  @IsArray()
-  completionChecklist?: { text: string; completed: boolean; order: number }[];
+  @MaxLength(2000)
+  notes?: string;
 }

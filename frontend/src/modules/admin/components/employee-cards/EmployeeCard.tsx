@@ -14,6 +14,7 @@ import {
   ToggleLeft,
   Trash2,
   Zap,
+  ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -172,6 +173,25 @@ export function EmployeeCard({
           <ProgressBar value={stats?.completionRate ?? 0} size="sm" />
         </div>
 
+        <div className="mt-3">
+          <div className="mb-1 flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Today&apos;s Progress</span>
+            {(stats?.assignedToday ?? 0) > 0 ? (
+              <span className="font-semibold tabular-nums">
+                {stats?.completedToday ?? 0}/{stats?.assignedToday ?? 0} done
+              </span>
+            ) : (
+              <span className="font-medium tabular-nums">No tasks today</span>
+            )}
+          </div>
+          {(stats?.assignedToday ?? 0) > 0 && (
+            <ProgressBar
+              value={Math.round(((stats?.completedToday ?? 0) / (stats?.assignedToday ?? 1)) * 100)}
+              size="sm"
+            />
+          )}
+        </div>
+
         <div className="mt-3 grid grid-cols-3 gap-1.5">
           {STAT_CELLS.map((cell) => (
             <div
@@ -246,6 +266,7 @@ export function EmployeeCard({
             <Link href={ROUTES.adminEmployeeDetail(id)}>
               <ExternalLink className="h-3.5 w-3.5" />
               View Details
+              <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
           <Button asChild variant="outline" size="icon" className="h-8 w-8" title="Assign Task">

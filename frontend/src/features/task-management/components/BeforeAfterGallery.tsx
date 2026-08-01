@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,10 +96,12 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
                   className="relative group overflow-hidden aspect-square cursor-pointer"
                   onClick={() => setSelectedBeforeIndex(index)}
                 >
-                  <img
+                  <Image
                     src={beforeUrls[index]}
                     alt={`Before ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <ZoomIn className="h-5 w-5 text-white" />
@@ -125,10 +128,12 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
                   className="relative group overflow-hidden aspect-square cursor-pointer"
                   onClick={() => setSelectedAfterIndex(index)}
                 >
-                  <img
+                  <Image
                     src={afterUrls[index]}
                     alt={`After ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <ZoomIn className="h-5 w-5 text-white" />
@@ -165,9 +170,11 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
           </DialogHeader>
           {selectedBeforeIndex !== null && (
             <div className="space-y-4">
-              <img
+              <Image
                 src={beforeUrls[selectedBeforeIndex]}
                 alt={`Before ${selectedBeforeIndex + 1}`}
+                width={1600}
+                height={1200}
                 className="w-full h-auto max-h-[60vh] object-contain rounded-lg"
               />
               <div className="flex justify-center gap-2">
@@ -204,9 +211,11 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
           </DialogHeader>
           {selectedAfterIndex !== null && (
             <div className="space-y-4">
-              <img
+              <Image
                 src={afterUrls[selectedAfterIndex]}
                 alt={`After ${selectedAfterIndex + 1}`}
+                width={1600}
+                height={1200}
                 className="w-full h-auto max-h-[60vh] object-contain rounded-lg"
               />
               <div className="flex justify-center gap-2">
@@ -252,9 +261,11 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
               <Badge variant="secondary" className="text-xs">Before</Badge>
               {selectedBeforeIndex !== null && (
                 <div className="space-y-2">
-                  <img
+                  <Image
                     src={beforeUrls[selectedBeforeIndex]}
                     alt={`Before ${selectedBeforeIndex + 1}`}
+                    width={1600}
+                    height={1200}
                     className="w-full h-auto max-h-[60vh] object-contain rounded-lg border"
                   />
                   <div className="flex justify-center gap-2">
@@ -287,9 +298,11 @@ export const BeforeAfterGallery: React.FC<BeforeAfterGalleryProps> = ({
               <Badge variant="default" className="text-xs">After</Badge>
               {selectedAfterIndex !== null && (
                 <div className="space-y-2">
-                  <img
+                  <Image
                     src={afterUrls[selectedAfterIndex]}
                     alt={`After ${selectedAfterIndex + 1}`}
+                    width={1600}
+                    height={1200}
                     className="w-full h-auto max-h-[60vh] object-contain rounded-lg border"
                   />
                   <div className="flex justify-center gap-2">

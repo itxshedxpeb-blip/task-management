@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Calendar,
@@ -9,10 +9,8 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  MessageSquare,
   Tag,
   RefreshCw,
-  Send,
   Circle,
   MoreVertical,
   Edit,
@@ -44,13 +42,12 @@ import { formatDate, formatDateTime } from '@/lib/date-utils';
 import {
   useTaskDetail,
   useUpdateTask,
-  useAddComment,
   useToggleChecklistItem,
   useDeleteTask,
 } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
-import type { Task, ChecklistItem, Comment, TaskActivity, TaskStatus } from '@/features/task-management/types';
+import type { Task, ChecklistItem, TaskActivity, TaskStatus } from '@/features/task-management/types';
 import { StatusSmartBadge, PrioritySmartBadge } from '@/features/task-management/components/shared/SmartBadge';
 import { CountdownTimer } from '@/features/task-management/components/shared/CountdownTimer';
 import { getDaysOverdue } from '@/features/task-management/utils/taskFormatters';
@@ -75,74 +72,6 @@ function DetailSkeleton() {
         ))}
       </div>
     </div>
-  );
-}
-
-function CommentSection({ task }: { task: Task }) {
-  const { user } = useAuth();
-  const addComment = useAddComment();
-  const [commentText, setCommentText] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-    await addComment.mutateAsync({ id: task.id, text: commentText.trim() });
-    setCommentText('');
-  };
-
-  const comments: Comment[] = task.comments || [];
-
-  return (
-    <Card className="mobile-card">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <MessageSquare className="h-4 w-4" />
-          Comments ({comments.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            placeholder="Add a comment..."
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            className="flex-1 h-10"
-          />
-          <Button
-            type="submit"
-            size="icon"
-            className="h-10 w-10 rounded-full"
-            disabled={!commentText.trim() || addComment.isPending}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-        {comments.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No comments yet.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="p-3 rounded-xl bg-muted/30"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground">
-                    {comment.userName}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatDate(comment.createdAt)}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">{comment.text}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -269,6 +198,7 @@ function ActivityTimeline({ task }: { task: Task }) {
 export default function MobileTaskDetail() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const taskId = params?.id as string;
   const { user } = useAuth();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -277,6 +207,16 @@ export default function MobileTaskDetail() {
   const deleteTask = useDeleteTask();
   const [showDelete, setShowDelete] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+
+  const backToEmployee = searchParams?.get('from') === 'employee' ? searchParams?.get('emp') : null;
+
+  const handleBack = () => {
+    if (backToEmployee) {
+      router.push(`/admin/employees/${backToEmployee}`);
+    } else {
+      router.back();
+    }
+  };
 
   // If desktop, use original detail page
   if (isDesktop) {
@@ -287,7 +227,11 @@ export default function MobileTaskDetail() {
   const handleDelete = async () => {
     if (task) {
       await deleteTask.mutateAsync(task.id);
-      router.back();
+      if (backToEmployee) {
+        router.push(`/admin/employees/${backToEmployee}`);
+      } else {
+        router.back();
+      }
     }
   };
 
@@ -324,21 +268,21 @@ export default function MobileTaskDetail() {
   const isOverdue = daysOverdue !== null && daysOverdue > 0 && task.status !== 'Completed';
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
       {/* App Bar */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
+      <header className="flex-shrink-0 sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-3">
             <Button
               size="icon-sm"
               variant="ghost"
-              onClick={() => router.back()}
+              onClick={handleBack}
               className="h-10 w-10"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-lg font-semibold text-foreground flex-1 truncate">
-              Task Details
+              {backToEmployee ? 'Task' : 'Task Details'}
             </h1>
           </div>
 
@@ -368,7 +312,7 @@ export default function MobileTaskDetail() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+      <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Task Header Card */}
         <Card className="mobile-card border-l-4 border-l-transparent">
           {isOverdue && (
@@ -392,6 +336,16 @@ export default function MobileTaskDetail() {
               <div className="flex flex-wrap gap-2">
                 <StatusSmartBadge status={task.status} />
                 <PrioritySmartBadge priority={task.priority} />
+                {task.taskId !== undefined && (
+                  <Badge variant="outline" className="text-[10px] h-5 font-mono">
+                    TSK-{String(task.taskId).padStart(3, '0')}
+                  </Badge>
+                )}
+                {task.category && (
+                  <Badge variant="outline" className="text-[10px] h-5">
+                    {task.category}
+                  </Badge>
+                )}
                 {isOverdue && (
                   <Badge variant="destructive" className="text-[10px] h-5">
                     <AlertTriangle className="h-3 w-3 mr-1" />
@@ -400,27 +354,83 @@ export default function MobileTaskDetail() {
                 )}
               </div>
 
+              {/* Progress */}
+              {(task.status === 'InProgress' ||
+                task.status === 'Todo' ||
+                task.status === 'OnHold' ||
+                task.status === 'Draft') && (
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-semibold text-foreground tabular-nums">
+                      {Math.max(0, Math.min(100, task.progress ?? 0))}%
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all duration-300',
+                        (task.progress ?? 0) >= 100
+                          ? 'bg-emerald-500'
+                          : (task.progress ?? 0) >= 60
+                            ? 'bg-primary'
+                            : 'bg-amber-500'
+                      )}
+                      style={{ width: `${Math.max(0, Math.min(100, task.progress ?? 0))}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Meta Information */}
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/50">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                  <Calendar className="h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
                     <p className="text-[10px] uppercase tracking-wider">Due Date</p>
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-foreground truncate">
                       {formatDate(task.dueDate)}
                     </p>
                   </div>
                 </div>
 
-                {task.assignedUserId && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="h-4 w-4" />
-                    <div>
+                {task.assignedUserName && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                    <User className="h-4 w-4 flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-wider">
                         Assigned To
                       </p>
                       <p className="font-medium text-foreground truncate">
-                        {task.assignedUserId}
+                        {task.assignedUserName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {task.createdByName && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                    <User className="h-4 w-4 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider">
+                        Created By
+                      </p>
+                      <p className="font-medium text-foreground truncate">
+                        {task.createdByName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {task.createdAt && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                    <Clock className="h-4 w-4 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider">
+                        Created
+                      </p>
+                      <p className="font-medium text-foreground truncate">
+                        {formatDate(task.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -443,12 +453,32 @@ export default function MobileTaskDetail() {
           <ChecklistSection task={task} />
         )}
 
-        {/* Comments */}
-        <CommentSection task={task} />
-
         {/* Activity Timeline */}
         <ActivityTimeline task={task} />
       </main>
+
+      {/* Sticky bottom action bar */}
+      <footer className="sticky bottom-0 z-40 bg-background/95 backdrop-blur-lg border-t border-border px-4 py-3 safe-area-bottom">
+        {task.status === 'Completed' || task.status === 'Archived' ? (
+          <div className="flex items-center justify-center gap-2 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 text-sm font-semibold">
+            <CheckCircle2 className="h-4 w-4" />
+            Task Completed
+          </div>
+        ) : task.status === 'Cancelled' ? (
+          <div className="flex items-center justify-center h-11 rounded-xl bg-muted text-muted-foreground text-sm font-semibold">
+            Task Cancelled
+          </div>
+        ) : (
+          <Button
+            className="w-full h-11 text-sm font-semibold rounded-xl"
+            onClick={() => handleStatusChange('Completed')}
+            disabled={updateTask.isPending}
+          >
+            <CheckCircle2 className="h-4 w-4 mr-2" />
+            {updateTask.isPending ? 'Updating...' : 'Mark Complete'}
+          </Button>
+        )}
+      </footer>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDelete} onOpenChange={setShowDelete}>

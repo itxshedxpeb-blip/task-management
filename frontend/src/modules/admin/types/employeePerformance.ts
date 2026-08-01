@@ -32,6 +32,8 @@ export interface EmployeeTaskSummary {
   dueThisMonth: number;
   cancelledTasks: number;
   rejectedTasks: number;
+  completedToday: number;
+  assignedToday: number;
   completionRate: number;
   avgCompletionHours: number;
   onTimeCompletionRate: number;
@@ -149,6 +151,57 @@ export interface PaginationMeta {
   totalPages: number;
   hasNext: boolean;
   hasPrevious: boolean;
+}
+
+export interface EmployeeTodayTaskRef {
+  id: string;
+  taskId: number;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  progress: number;
+  dueDate: string | null;
+}
+
+export interface EmployeeTodayCompletedTask {
+  id: string;
+  taskId: number;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  completedAt: string;
+}
+
+export interface EmployeeTodayLastActivity {
+  id: string;
+  activityType: string;
+  kind: EmployeeTimelineEvent['kind'];
+  description: string;
+  performedByName: string | null;
+  createdAt: string;
+  taskId: string;
+  taskNumber: number;
+  taskTitle: string;
+}
+
+export interface EmployeeToday {
+  date: string;
+  productivityToday: number;
+  counts: {
+    completedToday: number;
+    assignedToday: number;
+    dueToday: number;
+    pending: number;
+    overdue: number;
+    activityToday: number;
+    filesAddedToday: number;
+    commentsAddedToday: number;
+  };
+  currentTask: EmployeeTodayTaskRef | null;
+  completedToday: EmployeeTodayCompletedTask[];
+  assignedToday: EmployeeTodayTaskRef[];
+  dueToday: EmployeeTodayTaskRef[];
+  lastActivity: EmployeeTodayLastActivity | null;
 }
 
 export interface EmployeeListParams {

@@ -1,84 +1,34 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   AlertTriangle,
   RefreshCw,
-  Calendar,
   Plus,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { dayjs } from '@/lib/date-utils';
-import { useTasks, useCreateTask, useUpdateTask } from '@/modules/tasks/hooks/useTasks';
+import { useTasks, useCreateTask } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
-import type { Task, TaskStatus, TaskPriority } from '@/features/task-management/types';
+import type { Task, TaskPriority } from '@/features/task-management/types';
 
-interface Quadrant {
-  id: string;
-  title: string;
-  subtitle: string;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  filter: (task: Task) => boolean;
-}
-
-const QUADRANTS: Quadrant[] = [
-  {
-    id: 'urgent-important',
-    title: 'Do First',
-    subtitle: 'Urgent + Important',
-    color: 'text-red-500',
-    bgColor: 'bg-red-500/5',
-    borderColor: 'border-red-500/20',
-    filter: (t) => (t.priority === 'Urgent' || t.priority === 'High') && isOverdueOrDueSoon(t.dueDate),
-  },
-  {
-    id: 'not-urgent-important',
-    title: 'Schedule',
-    subtitle: 'Not Urgent + Important',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/5',
-    borderColor: 'border-blue-500/20',
-    filter: (t) => (t.priority === 'Urgent' || t.priority === 'High') && !isOverdueOrDueSoon(t.dueDate),
-  },
-  {
-    id: 'urgent-not-important',
-    title: 'Delegate',
-    subtitle: 'Urgent + Not Important',
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-500/5',
-    borderColor: 'border-amber-500/20',
-    filter: (t) => (t.priority === 'Medium' || t.priority === 'Low') && isOverdueOrDueSoon(t.dueDate),
-  },
-  {
-    id: 'not-urgent-not-important',
-    title: 'Eliminate',
-    subtitle: 'Not Urgent + Not Important',
-    color: 'text-slate-500',
-    bgColor: 'bg-slate-500/5',
-    borderColor: 'border-slate-500/20',
-    filter: (t) => (t.priority === 'Medium' || t.priority === 'Low' || t.priority === 'None') && !isOverdueOrDueSoon(t.dueDate),
-  },
+const PRIORITY_TABS: { priority: TaskPriority | 'all'; label: string; color: string; bgColor: string }[] = [
+  { priority: 'all', label: 'All', color: 'text-foreground', bgColor: 'bg-muted/50' },
+  { priority: 'Urgent', label: 'Urgent', color: 'text-red-400', bgColor: 'bg-red-500/10' },
+  { priority: 'High', label: 'High', color: 'text-orange-400', bgColor: 'bg-orange-500/10' },
+  { priority: 'Medium', label: 'Medium', color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
+  { priority: 'Low', label: 'Low', color: 'text-blue-400', bgColor: 'bg-blue-500/10' },
 ];
-
-function isOverdueOrDueSoon(dueDate?: Date | string): boolean {
-  if (!dueDate) return false;
-  const d = dayjs(dueDate);
-  const now = dayjs();
-  const threeDays = now.add(3, 'day');
-  return d.isSame(threeDays) || d.isBefore(threeDays);
-}
 
 const PRIORITY_DOT: Record<string, string> = {
   Urgent: 'bg-red-400',
@@ -87,13 +37,46 @@ const PRIORITY_DOT: Record<string, string> = {
   Low: 'bg-blue-400',
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  Todo: 'text-blue-400 bg-blue-500/10',
+  InProgress: 'text-orange-400 bg-orange-500/10',
+  Completed: 'text-emerald-400 bg-emerald-500/10',
+  OnHold: 'text-yellow-400 bg-yellow-500/10',
+  Draft: 'text-gray-400 bg-gray-500/10',
+};
+
+function TaskCard({ task }: { task: Task }) {
+  return (
+    <Link href={`/app/tasks/${task.id}`}>
+      <Card className="p-4 rounded-2xl border border-border bg-card hover:bg-card-hover hover:shadow-md transition-all cursor-pointer group">
+        <CardContent className="p-0">
+          <div className="flex items-start justify-between mb-3">
+            <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1 pr-2">
+              {task.title}
+            </p>
+            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+          </div>
+          {task.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{task.description}</p>
+          )}
+          <div className="flex items-center justify-between">
+            <Badge variant="outline" className={cn('text-xs', STATUS_COLORS[task.status] || '')}>
+              {task.status}
+            </Badge>
+            <div className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_DOT[task.priority])} />
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
 function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { user } = useAuth();
   const createTask = useCreateTask();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('Medium');
-  const [dueDate, setDueDate] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,11 +85,9 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
       title: title.trim(),
       description: description.trim() || undefined,
       priority,
-      status: 'Todo',
-      dueDate: dueDate ? new Date(dueDate) : new Date(),
-      assignedUserId: user?.id || '',
+      assignedUserId: user?.id,
     });
-    setTitle(''); setDescription(''); setPriority('Medium'); setDueDate('');
+    setTitle(''); setDescription(''); setPriority('Medium');
     onOpenChange(false);
   };
 
@@ -137,10 +118,6 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Due Date</Label>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          </div>
         </div>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -155,92 +132,79 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 
 export default function PriorityMatrixPage() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TaskPriority | 'all'>('all');
   const { data, isLoading, error, refetch } = useTasks({ pageSize: 500 });
 
   const tasks = data?.rows || [];
-
-  const quadrantTasks = (q: Quadrant) => tasks.filter(q.filter);
+  const filteredTasks = activeTab === 'all' ? tasks : tasks.filter((t) => t.priority === activeTab);
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Priority Matrix</h1>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
-            <p className="font-medium mb-1">Failed to load tasks</p>
-            <Button onClick={() => refetch()} variant="outline" size="sm" className="mt-3">
-              <RefreshCw className="h-4 w-4 mr-2" /> Retry
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col items-center justify-center h-full">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <p className="font-medium mb-4">Failed to load tasks</p>
+        <Button onClick={() => refetch()} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" /> Retry
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Priority Matrix</h1>
-          <p className="text-sm text-muted-foreground mt-1">Eisenhower matrix for task prioritization.</p>
-        </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Add Task</Button>
-          </DialogTrigger>
-          <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
-        </Dialog>
-      </div>
-
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-64 bg-muted rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {QUADRANTS.map((quadrant) => {
-            const qTasks = quadrantTasks(quadrant);
+    <div className="flex flex-col h-full">
+      {/* Sticky Priority Tabs */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border">
+        <div className="flex overflow-x-auto gap-2 px-4 py-3 scrollbar-hide">
+          {PRIORITY_TABS.map((tab) => {
+            const count = tab.priority === 'all' ? tasks.length : tasks.filter((t) => t.priority === tab.priority).length;
+            const isActive = activeTab === tab.priority;
             return (
-              <Card key={quadrant.id} className={cn('border', quadrant.borderColor, quadrant.bgColor)}>
-                <CardHeader className="pb-2">
-                  <CardTitle className={cn('text-base', quadrant.color)}>{quadrant.title}</CardTitle>
-                  <p className="text-xs text-muted-foreground">{quadrant.subtitle}</p>
-                </CardHeader>
-                <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
-                  {qTasks.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">No tasks in this quadrant</p>
-                  ) : (
-                    qTasks.map((task) => (
-                      <Link
-                        key={task.id}
-                        href={`/app/tasks/${task.id}`}
-                        className="flex items-center gap-2 p-2 rounded-lg bg-card hover:bg-card-hover transition-colors group"
-                      >
-                        <div className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_DOT[task.priority])} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">{task.title}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-muted-foreground">{task.assignedUserName}</span>
-                            {task.dueDate && (
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                <Calendar className="h-2.5 w-2.5" />
-                                {new Date(task.dueDate).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
+              <button
+                key={tab.priority}
+                onClick={() => setActiveTab(tab.priority)}
+                className={cn(
+                  'flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all',
+                  isActive
+                    ? `${tab.bgColor} ${tab.color} border border-border`
+                    : 'text-muted-foreground hover:bg-muted/50'
+                )}
+              >
+                {tab.label} ({count})
+              </button>
             );
           })}
         </div>
-      )}
+      </div>
+
+      {/* Task List */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-12 w-full rounded-2xl" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+            <AlertTriangle className="h-12 w-12 mb-4" />
+            <p>No tasks in {PRIORITY_TABS.find(t => t.priority === activeTab)?.label}</p>
+          </div>
+        ) : (
+          filteredTasks.map((task) => <TaskCard key={task.id} task={task} />)
+        )}
+      </div>
+
+      {/* Floating Action Button */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-50"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+        <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
+      </Dialog>
     </div>
   );
 }

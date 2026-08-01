@@ -7,6 +7,7 @@ import type {
   EmployeeTaskRow,
   EmployeeTasksParams,
   EmployeeTimelineEvent,
+  EmployeeToday,
   PaginationMeta,
 } from '../types/employeePerformance';
 
@@ -38,4 +39,7 @@ export const employeePerformanceApi = {
 
   getEmployeeReport: (id: string) =>
     api.get<BackendResponse<EmployeeReport>>(`/admin/employees/${id}/report`),
+
+  getEmployeeToday: (id: string) =>
+    api.get<BackendResponse<EmployeeToday>>(`/admin/employees/${id}/today`),
 };

@@ -3,12 +3,10 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Clock, 
-  CheckCircle, 
-  FileText, 
-  MessageSquare, 
-  Paperclip, 
+import {
+  Clock,
+  CheckCircle,
+  FileText,
   Play,
   Pause,
   User,
@@ -51,10 +49,6 @@ const getActivityIcon = (activityType: TaskActivityType) => {
       return Clock;
     case 'Checklist Updated':
       return ListChecks;
-    case 'Comment Added':
-      return MessageSquare;
-    case 'Attachment Added':
-      return Paperclip;
     default:
       return FileText;
   }
@@ -75,10 +69,6 @@ const getActivityColor = (activityType: TaskActivityType) => {
     case 'Due Date Changed':
     case 'Priority Changed':
       return 'text-amber-400';
-    case 'Attachment Added':
-      return 'text-violet-400';
-    case 'Comment Added':
-      return 'text-cyan-400';
     case 'Checklist Updated':
     case 'Progress Updated':
       return 'text-orange-400';
@@ -102,10 +92,6 @@ const getActivityBgColor = (activityType: TaskActivityType) => {
     case 'Due Date Changed':
     case 'Priority Changed':
       return 'bg-amber-50 border-amber-200';
-    case 'Attachment Added':
-      return 'bg-violet-50 border-violet-200';
-    case 'Comment Added':
-      return 'bg-cyan-50 border-cyan-200';
     case 'Checklist Updated':
     case 'Progress Updated':
       return 'bg-orange-50 border-orange-200';

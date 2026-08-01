@@ -5,9 +5,9 @@ import { GetTasksDto } from './dto/get-tasks.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { CompleteTaskDto } from './dto/complete-task.dto';
-import { VerifyTaskDto } from './dto/verify-task.dto';
 import { RequirePermissions } from '../common/decorators/permissions.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUser as CurrentUserType } from '../common/types';
 
 @ApiTags('task')
 @ApiBearerAuth()
@@ -18,9 +18,20 @@ export class TaskController {
   @Get()
   @RequirePermissions('task:list')
   @ApiOperation({ summary: 'Get all tasks with pagination and filters' })
-  async findAll(@Query() query: GetTasksDto) {
-    const data = await this.taskService.findAll(query);
+  async findAll(
+    @Query() query: GetTasksDto,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    const data = await this.taskService.findAll(query, user);
     return { message: 'Tasks fetched successfully.', data };
+  }
+
+  @Get('dashboard')
+  @RequirePermissions('task:list')
+  @ApiOperation({ summary: 'Get current employee task dashboard' })
+  async getDashboard(@CurrentUser() user: CurrentUserType) {
+    const data = await this.taskService.getDashboard(user);
+    return { message: 'Task dashboard fetched.', data };
   }
 
   @Get('stats')
@@ -47,6 +58,14 @@ export class TaskController {
     return { message: 'Dashboard KPIs fetched.', data };
   }
 
+  @Get('admin-dashboard')
+  @RequirePermissions('task:list')
+  @ApiOperation({ summary: 'Get admin dashboard with rich employee cards' })
+  async getAdminDashboard() {
+    const data = await this.taskService.getAdminDashboard();
+    return { message: 'Admin dashboard fetched.', data };
+  }
+
   @Get('employee-performance')
   @RequirePermissions('task:list')
   @ApiOperation({ summary: 'Get employee performance stats' })
@@ -60,8 +79,11 @@ export class TaskController {
   @Get(':id')
   @RequirePermissions('task:list')
   @ApiOperation({ summary: 'Get task by ID' })
-  async findById(@Param('id') id: string) {
-    const data = await this.taskService.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    const data = await this.taskService.findById(id, user);
     return { message: 'Task fetched successfully.', data };
   }
 
@@ -70,36 +92,34 @@ export class TaskController {
   @ApiOperation({ summary: 'Create a new task' })
   async create(
     @Body() dto: CreateTaskDto,
-    @CurrentUser('id') userId: string,
-    @CurrentUser('name') userName: string,
+    @CurrentUser() user: CurrentUserType,
   ) {
-    const data = await this.taskService.create(dto, userId, userName || 'Unknown');
+    console.log('[TaskController.create] Request received:', {
+      dto: {
+        title: dto.title,
+        assignedUserId: dto.assignedUserId,
+        priority: dto.priority,
+      },
+      currentUser: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      },
+    });
+    const data = await this.taskService.create(dto, user);
     return { message: 'Task created successfully.', data };
   }
 
   @Post(':id/complete')
   @RequirePermissions('task:update')
-  @ApiOperation({ summary: 'Complete a task with photo proof' })
+  @ApiOperation({ summary: 'Complete a task' })
   async complete(
     @Param('id') id: string,
     @Body() dto: CompleteTaskDto,
-    @CurrentUser('id') userId: string,
-    @CurrentUser('name') userName: string,
+    @CurrentUser() user: CurrentUserType,
   ) {
-    const data = await this.taskService.complete(id, dto, userId, userName || 'Unknown');
+    const data = await this.taskService.complete(id, dto, user);
     return { message: 'Task completed successfully.', data };
-  }
-
-  @Post(':id/verify')
-  @RequirePermissions('task:approve')
-  @ApiOperation({ summary: 'Verify or reject a completed task' })
-  async verify(
-    @Param('id') id: string,
-    @Body() dto: VerifyTaskDto,
-  ) {
-    const data = await this.taskService.verify(id, dto);
-    const action = dto.status === 'Verified' ? 'verified' : 'rejected';
-    return { message: `Task ${action} successfully.`, data };
   }
 
   @Patch(':id')
@@ -108,10 +128,9 @@ export class TaskController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateTaskDto,
-    @CurrentUser('id') userId: string,
-    @CurrentUser('name') userName: string,
+    @CurrentUser() user: CurrentUserType,
   ) {
-    const data = await this.taskService.update(id, dto, userId, userName || 'Unknown');
+    const data = await this.taskService.update(id, dto, user);
     return { message: 'Task updated successfully.', data };
   }
 
@@ -120,10 +139,9 @@ export class TaskController {
   @ApiOperation({ summary: 'Delete a task' })
   async softDelete(
     @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-    @CurrentUser('name') userName: string,
+    @CurrentUser() user: CurrentUserType,
   ) {
-    const data = await this.taskService.deleteTask(id, userId, userName || 'Unknown');
+    const data = await this.taskService.deleteTask(id, user);
     return { message: 'Task deleted successfully.', data };
   }
 }

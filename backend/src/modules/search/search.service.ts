@@ -10,12 +10,12 @@ export class SearchService {
     const maxResults = limit || 20;
 
     if (!searchTerm || searchTerm.length < 2) {
-      return { tasks: [], users: [], comments: [] };
+      return { tasks: [], users: [] };
     }
 
     const perTypeLimit = Math.ceil(maxResults / 3);
 
-    const [tasks, users, comments] = await Promise.all([
+    const [tasks, users] = await Promise.all([
       this.prisma.task.findMany({
         where: {
           isDeleted: false,
@@ -55,32 +55,12 @@ export class SearchService {
         take: perTypeLimit,
         orderBy: { name: 'asc' },
       }),
-      this.prisma.taskComment.findMany({
-        where: {
-          task: { isDeleted: false },
-          isDeleted: false,
-          content: { contains: searchTerm, mode: 'insensitive' },
-        },
-        select: {
-          id: true,
-          content: true,
-          authorName: true,
-          createdAt: true,
-          taskId: true,
-          task: {
-            select: { id: true, title: true },
-          },
-        },
-        take: perTypeLimit,
-        orderBy: { createdAt: 'desc' },
-      }),
     ]);
 
     return {
       tasks,
       users,
-      comments,
-      total: tasks.length + users.length + comments.length,
+      total: tasks.length + users.length,
     };
   }
 }

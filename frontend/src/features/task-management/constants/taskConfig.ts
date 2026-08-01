@@ -28,6 +28,9 @@ export const STATUS_CONFIG: Record<TaskStatus, BadgeConfig> = {
   InProgress: { label: 'In Progress', variant: 'warning', className: 'bg-orange-500/15 text-orange-400 border-orange-500/25' },
   OnHold: { label: 'On Hold', variant: 'secondary', className: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25' },
   Completed: { label: 'Completed', variant: 'success' },
+  CompletedLate: { label: 'Completed Late', variant: 'warning', className: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
+  Incomplete: { label: 'Incomplete', variant: 'outline', className: 'bg-orange-500/15 text-orange-400 border-orange-500/25' },
+  Overdue: { label: 'Overdue', variant: 'destructive' },
   Archived: { label: 'Archived', variant: 'outline', className: 'bg-gray-600/15 text-gray-400 border-gray-600/25' },
   Cancelled: { label: 'Cancelled', variant: 'destructive' },
 };
@@ -46,6 +49,9 @@ export const STATUS_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   InProgress: ['OnHold', 'Completed', 'Cancelled'],
   OnHold: ['InProgress', 'Cancelled'],
   Completed: ['Archived', 'Cancelled'],
+  CompletedLate: ['Archived', 'Cancelled'],
+  Incomplete: ['Cancelled'],
+  Overdue: ['Cancelled'],
   Archived: [],
   Cancelled: [],
 };

@@ -33,7 +33,6 @@ export class ReportsService {
         status: true,
         dueDate: true,
         completedAt: true,
-        verifiedAt: true,
         createdAt: true,
       },
     });
@@ -102,24 +101,45 @@ export class ReportsService {
       }
     }
 
-    const [totalTasks, tasksByStatus, tasksByPriority, completedTasks, overdueTasks] = await Promise.all([
-      this.prisma.task.count({ where: baseWhere }),
-      this.prisma.task.groupBy({ by: ['status'], where: baseWhere, _count: true }),
-      this.prisma.task.groupBy({ by: ['priority'], where: baseWhere, _count: true }),
-      this.prisma.task.count({
-        where: {
-          ...baseWhere,
-          status: { in: ['Completed', 'Archived'] },
-        },
-      }),
-      this.prisma.task.count({
-        where: {
-          ...baseWhere,
-          dueDate: { lt: new Date() },
-          status: { in: ['Draft', 'Todo', 'InProgress', 'OnHold'] },
-        },
-      }),
-    ]);
+    const [totalTasks, tasksByStatus, tasksByPriority, completedTasks, overdueTasks, pendingTasks, highPriorityTasks, completedRows] =
+      await Promise.all([
+        this.prisma.task.count({ where: baseWhere }),
+        this.prisma.task.groupBy({ by: ['status'], where: baseWhere, _count: true }),
+        this.prisma.task.groupBy({ by: ['priority'], where: baseWhere, _count: true }),
+        this.prisma.task.count({
+          where: {
+            ...baseWhere,
+            status: { in: ['Completed', 'Archived'] },
+          },
+        }),
+        this.prisma.task.count({
+          where: {
+            ...baseWhere,
+            dueDate: { lt: new Date() },
+            status: { in: ['Draft', 'Todo', 'InProgress', 'OnHold'] },
+          },
+        }),
+        this.prisma.task.count({
+          where: {
+            ...baseWhere,
+            status: { in: ['Draft', 'Todo', 'InProgress', 'OnHold'] },
+          },
+        }),
+        this.prisma.task.count({
+          where: {
+            ...baseWhere,
+            priority: { in: ['Urgent', 'High'] },
+          },
+        }),
+        this.prisma.task.findMany({
+          where: {
+            ...baseWhere,
+            status: { in: ['Completed', 'Archived'] },
+            completedAt: { not: null },
+          },
+          select: { createdAt: true, completedAt: true },
+        }),
+      ]);
 
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -135,10 +155,25 @@ export class ReportsService {
       priorityMap[p.priority] = p._count;
     });
 
+    const totalHours = completedRows.reduce(
+      (sum, row) =>
+        sum +
+        (row.completedAt && row.createdAt
+          ? (new Date(row.completedAt).getTime() - new Date(row.createdAt).getTime()) /
+            (60 * 60 * 1000)
+          : 0),
+      0,
+    );
+    const avgCompletionHours =
+      completedRows.length > 0 ? Math.round((totalHours / completedRows.length) * 10) / 10 : 0;
+
     return {
       totalTasks,
       completedTasks,
+      pendingTasks,
       overdueTasks,
+      highPriorityTasks,
+      avgCompletionHours,
       completionRate,
       byStatus: statusMap,
       byPriority: priorityMap,

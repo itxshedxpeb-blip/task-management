@@ -15,6 +15,7 @@ import {
   LogOut,
   Search,
   X,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,12 +43,14 @@ interface NavItem {
 
 const BOTTOM_NAV_ITEMS: NavItem[] = [
   { title: 'Tasks', href: '/app/tasks', icon: ListTodo },
-  { title: 'Board', href: '/app/board', icon: Columns },
+  { title: 'Today', href: '/app/today', icon: Calendar },
   { title: 'Calendar', href: '/app/calendar', icon: Calendar },
-  { title: 'More', href: '/app/priority-matrix', icon: Menu },
+  { title: 'Reports', href: '/app/reports', icon: BarChart3 },
+  { title: 'Menu', href: '/app/priority-matrix', icon: Menu },
 ];
 
 const MORE_MENU_ITEMS: NavItem[] = [
+  { title: 'Board', href: '/app/board', icon: Columns },
   { title: 'Priority Matrix', href: '/app/priority-matrix', icon: Compass },
   { title: 'Notes', href: '/app/notes', icon: StickyNote },
   { title: 'Profile', href: '/app/profile', icon: User },
@@ -96,7 +99,7 @@ export function MobileAppShell({
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       {/* App Bar */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
@@ -225,8 +228,10 @@ export function MobileAppShell({
       </header>
 
       {/* Main Content */}
-      <main className={cn('flex-1 overflow-y-auto', className)}>
-        {children}
+      <main className={cn('flex-1 overflow-y-auto -webkit-overflow-scrolling: touch', className)} style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="pb-20">
+          {children}
+        </div>
       </main>
 
       {/* Bottom Navigation */}

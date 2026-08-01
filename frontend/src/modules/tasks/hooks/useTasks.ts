@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { api } from '@/core/api';
+import { useTaskSocket } from '@/core/socket';
 import type { Task, TaskQuery, TaskStatus, TaskPriority } from '@/features/task-management/types';
 import dayjs from 'dayjs';
 
@@ -33,6 +35,33 @@ export function useTasks(params?: {
   /** When true, skips the default 7-day window (shows all tasks). */
   showAll?: boolean;
 }) {
+  const socket = useTaskSocket();
+  const qc = useQueryClient();
+  
+  // Set up Socket.IO listeners for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTaskEvent = () => {
+      qc.invalidateQueries({ queryKey: ['module-tasks'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-kpis'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-today-tasks'] });
+    };
+
+    socket.on('task:created', handleTaskEvent);
+    socket.on('task:updated', handleTaskEvent);
+    socket.on('task:completed', handleTaskEvent);
+    socket.on('task:deleted', handleTaskEvent);
+
+    return () => {
+      socket.off('task:created', handleTaskEvent);
+      socket.off('task:updated', handleTaskEvent);
+      socket.off('task:completed', handleTaskEvent);
+      socket.off('task:deleted', handleTaskEvent);
+    };
+  }, [socket, qc]);
+  
   return useQuery({
     queryKey: ['module-tasks', params],
     queryFn: async () => {
@@ -50,7 +79,10 @@ export function useTasks(params?: {
         query.dateFrom = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
         query.dateTo = dayjs().format('YYYY-MM-DD');
       }
+      
+      console.log('[useTasks] Fetching tasks with query:', query);
       const res = await api.get<BackendResponse<PaginatedResponse<Task>>>('/tasks', { params: query });
+      console.log('[useTasks] Response:', { rows: res.data?.rows?.length, pagination: res.data?.pagination });
       return res.data;
     },
   });
@@ -70,12 +102,20 @@ export function useTaskDetail(id: string) {
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => api.post<BackendResponse<Task>>('/tasks', data),
+    mutationFn: (data: any) => {
+      console.log('[useCreateTask] Creating task with payload:', data);
+      return api.post<BackendResponse<Task>>('/tasks', data);
+    },
     onSuccess: () => {
+      console.log('[useCreateTask] Task created successfully, invalidating queries');
       qc.invalidateQueries({ queryKey: ['module-tasks'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
       qc.invalidateQueries({ queryKey: ['dashboard-kpis'] });
       qc.invalidateQueries({ queryKey: ['dashboard-today-tasks'] });
+      console.log('[useCreateTask] Queries invalidated');
+    },
+    onError: (error) => {
+      console.error('[useCreateTask] Task creation failed:', error);
     },
   });
 }
@@ -114,17 +154,6 @@ export function useMoveTask() {
       qc.invalidateQueries({ queryKey: ['module-tasks'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
       qc.invalidateQueries({ queryKey: ['dashboard-kpis'] });
-    },
-  });
-}
-
-export function useAddComment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, text }: { id: string; text: string }) =>
-      api.post<BackendResponse<Task>>(`/tasks/${id}/comments`, { text }),
-    onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['module-task', variables.id] });
     },
   });
 }

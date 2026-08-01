@@ -57,7 +57,7 @@ export function TimelineSection({
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold">Activity Timeline</CardTitle>
       </CardHeader>
-      <CardContent className="max-h-[560px] space-y-4 overflow-y-auto">
+      <CardContent className="space-y-4 lg:max-h-[560px] lg:overflow-y-auto">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-start gap-3">
@@ -103,7 +103,7 @@ export function TimelineSection({
                           href={`/app/tasks/${event.taskId}`}
                           className="mt-1 block truncate text-xs font-medium text-primary hover:underline"
                         >
-                          #{event.taskNumber} · {event.taskTitle}
+                          {`TSK-${String(event.taskNumber).padStart(3, '0')}`} · {event.taskTitle}
                         </Link>
                         {event.performedByName && (
                           <p className="mt-1 text-[10px] text-muted-foreground">

@@ -70,6 +70,8 @@ export interface EmployeeMetrics {
   dueThisMonth: number;
   cancelledTasks: number;
   rejectedTasks: number;
+  completedToday: number;
+  assignedToday: number;
   completionRate: number;
   avgCompletionHours: number;
   onTimeCompletionRate: number;
@@ -426,7 +428,7 @@ export class EmployeePerformanceService {
       this.prisma.$queryRaw<[{ count: number }]>`
         SELECT COUNT(*)::int AS count
         FROM "Task"
-        WHERE "assignedUserId" = ${id}::uuid
+        WHERE "assignedUserId" = ${id}::text
           AND "isDeleted" = false
           AND "status" IN ('Completed', 'Archived')
           AND "completedAt" IS NOT NULL
@@ -446,7 +448,7 @@ export class EmployeePerformanceService {
                COUNT(*)::int AS created_count,
                COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int AS completed_count
         FROM "Task"
-        WHERE "assignedUserId" = ${id}::uuid
+        WHERE "assignedUserId" = ${id}::text
           AND "isDeleted" = false
           AND "createdAt" >= NOW() - INTERVAL '29 days'
         GROUP BY bucket
@@ -457,7 +459,7 @@ export class EmployeePerformanceService {
                COUNT(*)::int AS created_count,
                COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int AS completed_count
         FROM "Task"
-        WHERE "assignedUserId" = ${id}::uuid
+        WHERE "assignedUserId" = ${id}::text
           AND "isDeleted" = false
           AND "createdAt" >= NOW() - INTERVAL '11 weeks'
         GROUP BY bucket
@@ -468,7 +470,7 @@ export class EmployeePerformanceService {
                COUNT(*)::int AS created_count,
                COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int AS completed_count
         FROM "Task"
-        WHERE "assignedUserId" = ${id}::uuid
+        WHERE "assignedUserId" = ${id}::text
           AND "isDeleted" = false
           AND "createdAt" >= NOW() - INTERVAL '11 months'
         GROUP BY bucket
@@ -478,7 +480,7 @@ export class EmployeePerformanceService {
         `SELECT to_char(date_trunc('week', "dueDate"), 'YYYY-MM-DD') AS bucket,
                COUNT(*)::int AS overdue_count
         FROM "Task"
-        WHERE "assignedUserId" = ${id}::uuid
+        WHERE "assignedUserId" = ${id}::text
           AND "isDeleted" = false
           AND "status" NOT IN ('Completed', 'Archived', 'Cancelled')
           AND "dueDate" IS NOT NULL
@@ -531,10 +533,147 @@ export class EmployeePerformanceService {
     };
   }
 
+  async getEmployeeToday(id: string) {
+    await this.ensureEmployee(id);
+
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+
+    const taskSelect = {
+      id: true,
+      taskId: true,
+      title: true,
+      status: true,
+      priority: true,
+    } as const;
+
+    const [
+      currentTask,
+      completedToday,
+      assignedToday,
+      dueToday,
+      activityToday,
+      lastActivity,
+      stats,
+    ] = await Promise.all([
+      this.prisma.task.findFirst({
+        where: { assignedUserId: id, isDeleted: false, status: 'InProgress' },
+        orderBy: { updatedAt: 'desc' },
+        select: { ...taskSelect, progress: true, dueDate: true },
+      }),
+      this.prisma.task.findMany({
+        where: {
+          assignedUserId: id,
+          isDeleted: false,
+          status: { in: COMPLETED_STATUSES },
+          completedAt: { gte: todayStart, lt: tomorrowStart },
+        },
+        orderBy: { completedAt: 'desc' },
+        take: 50,
+        select: { ...taskSelect, completedAt: true },
+      }),
+      this.prisma.task.findMany({
+        where: {
+          assignedUserId: id,
+          isDeleted: false,
+          createdAt: { gte: todayStart, lt: tomorrowStart },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: { ...taskSelect, progress: true, createdAt: true },
+      }),
+      this.prisma.task.findMany({
+        where: {
+          assignedUserId: id,
+          isDeleted: false,
+          status: { in: ACTIVE_STATUSES },
+          dueDate: { gte: todayStart, lt: tomorrowStart },
+        },
+        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
+        take: 50,
+        select: { ...taskSelect, progress: true, dueDate: true },
+      }),
+      this.prisma.taskActivityLog.count({
+        where: {
+          task: { assignedUserId: id, isDeleted: false },
+          createdAt: { gte: todayStart, lt: tomorrowStart },
+        },
+      }),
+      this.prisma.taskActivityLog.findFirst({
+        where: { task: { assignedUserId: id, isDeleted: false } },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          activityType: true,
+          description: true,
+          performedByName: true,
+          createdAt: true,
+          task: {
+            select: { id: true, taskId: true, title: true },
+          },
+        },
+      }),
+      this.attachMetrics([{ id }]),
+    ]);
+
+    const metrics = stats && stats[0] ? stats[0].stats : null;
+    const overdueCount = metrics?.overdueTasks ?? 0;
+    const pendingCount = metrics?.pendingTasks ?? 0;
+    const completedCount = completedToday.length;
+    const dueCount = dueToday.length;
+
+    const productivityToday =
+      completedCount + dueCount + overdueCount > 0
+        ? clampScore(
+            Math.round((completedCount / (completedCount + dueCount + overdueCount)) * 100),
+          )
+        : 0;
+
+    return {
+      date: todayStart.toISOString().slice(0, 10),
+      productivityToday,
+      counts: {
+        completedToday: completedCount,
+        assignedToday: assignedToday.length,
+        dueToday: dueCount,
+        pending: pendingCount,
+        overdue: overdueCount,
+        activityToday,
+      },
+      currentTask: currentTask
+        ? {
+            id: currentTask.id,
+            taskId: currentTask.taskId,
+            title: currentTask.title,
+            status: currentTask.status,
+            priority: currentTask.priority,
+            progress: currentTask.progress ?? 0,
+            dueDate: currentTask.dueDate,
+          }
+        : null,
+      completedToday,
+      assignedToday,
+      dueToday,
+      lastActivity: lastActivity
+        ? {
+            id: lastActivity.id,
+            activityType: lastActivity.activityType,
+            kind: this.mapActivityKind(lastActivity.activityType),
+            description: lastActivity.description,
+            performedByName: lastActivity.performedByName,
+            createdAt: lastActivity.createdAt,
+            taskId: lastActivity.task.id,
+            taskNumber: lastActivity.task.taskId,
+            taskTitle: lastActivity.task.title,
+          }
+        : null,
+    };
+  }
+
   // ─── Private helpers ─────────────────────────────────────────────────────
 
-  private async attachMetrics<T extends { id: string }>(users: T[]) {
-    if (users.length === 0) return [];
+  private async attachMetrics<T extends { id: string }>(users: T[]) {    if (users.length === 0) return [];
     const userIds = users.map((u) => u.id);
     const metricMap = await this.collectMetrics(userIds);
     return users.map((user) => ({
@@ -568,6 +707,7 @@ export class EmployeePerformanceService {
       completedTasks,
       runningTasks,
       openTasks,
+      createdTodayGroups,
     ] = await Promise.all([
       this.prisma.task.groupBy({
         by: ['assignedUserId', 'status'],
@@ -668,6 +808,14 @@ export class EmployeePerformanceService {
           assignedUserId: true,
         },
       }),
+      this.prisma.task.groupBy({
+        by: ['assignedUserId'],
+        where: {
+          ...activeWhere,
+          createdAt: { gte: todayStart, lt: tomorrowStart },
+        },
+        _count: { _all: true },
+      }),
     ]);
 
     const statusMap = new Map<string, Record<string, number>>();
@@ -690,6 +838,17 @@ export class EmployeePerformanceService {
     const todayMap = countMap(todayGroups);
     const weekMap = countMap(weekGroups);
     const monthMap = countMap(monthGroups);
+    const createdTodayMap = countMap(createdTodayGroups);
+
+    const completedTodayMap = new Map<string, number>();
+    completedTasks.forEach((t) => {
+      if (t.assignedUserId && t.completedAt && t.completedAt >= todayStart) {
+        completedTodayMap.set(
+          t.assignedUserId,
+          (completedTodayMap.get(t.assignedUserId) ?? 0) + 1,
+        );
+      }
+    });
 
     const rejectedMap = new Map<string, number>();
     rejectedActivities.forEach((a) => {
@@ -812,6 +971,8 @@ export class EmployeePerformanceService {
         dueThisMonth,
         cancelledTasks,
         rejectedTasks,
+        completedToday: completedTodayMap.get(userId) ?? 0,
+        assignedToday: createdTodayMap.get(userId) ?? 0,
         completionRate,
         avgCompletionHours,
         onTimeCompletionRate: 0,
@@ -870,6 +1031,8 @@ export class EmployeePerformanceService {
       dueThisMonth: 0,
       cancelledTasks: 0,
       rejectedTasks: 0,
+      completedToday: 0,
+      assignedToday: 0,
       completionRate: 0,
       avgCompletionHours: 0,
       onTimeCompletionRate: 0,

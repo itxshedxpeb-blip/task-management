@@ -23,8 +23,6 @@ import { formatDate, formatDateTime } from '@/lib/date-utils';
 import { Task } from '../types';
 import { ActivityTimeline } from './ActivityTimeline';
 import { TaskChecklist } from './TaskChecklist';
-import { TaskComments } from './TaskComments';
-import { TaskAttachments } from './TaskAttachments';
 import { BeforeAfterGallery } from './BeforeAfterGallery';
 import { Play, Pause, RotateCcw, Bell, History, MoreVertical } from 'lucide-react';
 
@@ -362,15 +360,11 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
 
       {/* Tabs */}
       <Tabs defaultValue="timeline" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="checklist">Checklist</TabsTrigger>
           <TabsTrigger value="images">Images</TabsTrigger>
-          <TabsTrigger value="comments">Comments</TabsTrigger>
-          <TabsTrigger value="attachments">Attachments</TabsTrigger>
           <TabsTrigger value="linked">Linked</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="details">Details</TabsTrigger>
         </TabsList>
 
         {/* Timeline Tab */}
@@ -404,28 +398,6 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
               <p className="text-sm">{task.completionProof.notes}</p>
             </Card>
           )}
-        </TabsContent>
-
-        {/* Comments Tab */}
-        <TabsContent value="comments" className="mt-4">
-          <TaskComments
-            comments={task.comments || []}
-            onChange={() => {}}
-            disabled={false}
-            currentUserId={currentUserId}
-            currentUserName={currentUserName}
-            isAdmin={isAdmin}
-          />
-        </TabsContent>
-
-        {/* Attachments Tab */}
-        <TabsContent value="attachments" className="mt-4">
-          <TaskAttachments
-            attachments={task.attachments || []}
-            onChange={() => {}}
-            disabled={false}
-            currentUserId={currentUserId}
-          />
         </TabsContent>
 
         {/* Linked Modules Tab */}
@@ -487,18 +459,6 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                     </div>
                   </div>
                 )}
-                
-                {task.verifiedBy && (
-                  <div className="flex items-start gap-3 p-3 border rounded-lg">
-                    <CheckCircle className="h-4 w-4 text-purple-600 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Task Verified</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDateTime(task.verifiedAt)}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -534,38 +494,6 @@ export const TaskDetailPage: React.FC<TaskDetailPageProps> = ({
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Notes</p>
                     <p className="text-sm">{task.completionProof.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Verification Details */}
-          {task.verifiedBy && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Verification Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Verified By</p>
-                    <p className="text-sm font-medium">{task.verifiedByName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Verified At</p>
-                    <p className="text-sm font-medium">
-                      {formatDateTime(task.verifiedAt) || '-'}
-                    </p>
-                  </div>
-                </div>
-                {task.verificationNotes && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Verification Notes</p>
-                    <p className="text-sm">{task.verificationNotes}</p>
                   </div>
                 )}
               </CardContent>

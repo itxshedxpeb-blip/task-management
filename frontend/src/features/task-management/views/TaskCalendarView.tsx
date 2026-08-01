@@ -64,7 +64,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
 
   const getTasksForDate = (date: Date) => {
     return tasks.filter(task => {
-      const taskDate = new Date(task.dueDate);
+      const taskDate = new Date(task.createdAt);
       return (
         taskDate.getDate() === date.getDate() &&
         taskDate.getMonth() === date.getMonth() &&
@@ -300,7 +300,7 @@ export const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({
 
   const renderTimelineView = () => {
     const sortedTasks = [...tasks].sort((a, b) =>
-      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     return (
