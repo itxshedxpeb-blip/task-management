@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import {
   Users,
   CheckSquare,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { adminApi } from '@/modules/admin/services/adminApi';
+import { useTaskSocket } from '@/modules/tasks/hooks/useTasks';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
 import { MobileAdminDashboard } from '@/components/mobile/MobileAdminDashboard';
 import { useDashboardTaskKPIs } from '@/features/task-management/hooks/useTaskManagement';
@@ -58,6 +60,7 @@ function StatCard({
 
 export default function AdminDashboardPage() {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const socket = useTaskSocket();
   const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: () => adminApi.getDashboardStats(),
@@ -66,6 +69,28 @@ export default function AdminDashboardPage() {
 
   const d = (stats as any)?.data || stats || {};
   const dKpis = (kpis as any)?.data || kpis || null;
+
+  // Set up Socket.IO listeners for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTaskEvent = () => {
+      console.log('[AdminDashboardPage] Task event received, refetching data');
+      refetch();
+    };
+
+    socket.on('task:created', handleTaskEvent);
+    socket.on('task:updated', handleTaskEvent);
+    socket.on('task:completed', handleTaskEvent);
+    socket.on('task:deleted', handleTaskEvent);
+
+    return () => {
+      socket.off('task:created', handleTaskEvent);
+      socket.off('task:updated', handleTaskEvent);
+      socket.off('task:completed', handleTaskEvent);
+      socket.off('task:deleted', handleTaskEvent);
+    };
+  }, [socket, refetch]);
 
   if (isLoading) {
     return (

@@ -34,7 +34,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/date-utils';
 import { adminApi } from '@/modules/admin/services/adminApi';
-import { useDeleteTask, useCreateTask } from '@/modules/tasks/hooks/useTasks';
+import { useDeleteTask, useCreateTask, useTaskSocket } from '@/modules/tasks/hooks/useTasks';
 import { STATUS_LABELS } from '@/features/task-management/constants/taskConfig';
 import { StatusSmartBadge, PrioritySmartBadge } from '@/features/task-management/components/shared/SmartBadge';
 import { CountdownTimer } from '@/features/task-management/components/shared/CountdownTimer';
@@ -180,6 +180,7 @@ export default function AdminTasksPage() {
   const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const deleteTask = useDeleteTask();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const socket = useTaskSocket();
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -207,6 +208,28 @@ export default function AdminTasksPage() {
       setIsLoading(false);
     }
   }, [page, pageSize, search, statusFilter, priorityFilter, globalFilters]);
+
+  // Set up Socket.IO listeners for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTaskEvent = () => {
+      console.log('[AdminTasksPage] Task event received, refetching data');
+      fetchData();
+    };
+
+    socket.on('task:created', handleTaskEvent);
+    socket.on('task:updated', handleTaskEvent);
+    socket.on('task:completed', handleTaskEvent);
+    socket.on('task:deleted', handleTaskEvent);
+
+    return () => {
+      socket.off('task:created', handleTaskEvent);
+      socket.off('task:updated', handleTaskEvent);
+      socket.off('task:completed', handleTaskEvent);
+      socket.off('task:deleted', handleTaskEvent);
+    };
+  }, [socket, fetchData]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchData(); }, [fetchData]);

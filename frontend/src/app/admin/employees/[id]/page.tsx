@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   User, 
@@ -24,6 +24,7 @@ import {
   useEmployeeTasks,
   useEmployeeTimeline,
 } from '@/modules/admin/hooks/useEmployeePerformance';
+import { useTaskSocket } from '@/modules/tasks/hooks/useTasks';
 import type {
   EmployeePerformance,
   EmployeeTaskRow,
@@ -50,9 +51,10 @@ export default function AdminEmployeeDetailPage() {
   const { id } = useParams<{ id: string }>() ?? {};
   const router = useRouter();
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+  const socket = useTaskSocket();
 
   const { data, isLoading, error, refetch } = useEmployeePerformance(id);
-  const timelineQuery = useEmployeeTimeline(id, 50);
+  const timelineQuery = useEmployeeTimeline(id);
 
   const tasksQuery = useEmployeeTasks(id, {
     page: 1,
@@ -64,6 +66,29 @@ export default function AdminEmployeeDetailPage() {
   const employee = (data as any)?.data as EmployeePerformance | undefined;
   const timeline = (timelineQuery.data as any)?.data ?? [];
   const allTasks = ((tasksQuery.data as any)?.data?.rows || []) as EmployeeTaskRow[];
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleTaskEvent = () => {
+      console.log('[AdminEmployeeDetailPage] Task event received, refetching data');
+      refetch();
+      tasksQuery.refetch();
+      timelineQuery.refetch();
+    };
+
+    socket.on('task:created', handleTaskEvent);
+    socket.on('task:updated', handleTaskEvent);
+    socket.on('task:completed', handleTaskEvent);
+    socket.on('task:deleted', handleTaskEvent);
+
+    return () => {
+      socket.off('task:created', handleTaskEvent);
+      socket.off('task:updated', handleTaskEvent);
+      socket.off('task:completed', handleTaskEvent);
+      socket.off('task:deleted', handleTaskEvent);
+    };
+  }, [socket, refetch, tasksQuery, timelineQuery]);
 
   if (error && !isLoading) {
     return (

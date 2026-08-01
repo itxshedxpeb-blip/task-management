@@ -15,7 +15,7 @@ import {
   LogOut,
   Search,
   X,
-  BarChart3,
+  BarChart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +45,7 @@ const BOTTOM_NAV_ITEMS: NavItem[] = [
   { title: 'Tasks', href: '/app/tasks', icon: ListTodo },
   { title: 'Today', href: '/app/today', icon: Calendar },
   { title: 'Calendar', href: '/app/calendar', icon: Calendar },
-  { title: 'Reports', href: '/app/reports', icon: BarChart3 },
+  { title: 'Reports', href: '/app/reports', icon: BarChart },
   { title: 'Menu', href: '/app/priority-matrix', icon: Menu },
 ];
 
