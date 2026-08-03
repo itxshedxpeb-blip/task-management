@@ -1,4 +1,4 @@
-# Render Blueprint - Backend API
+# Render Blueprint - Backend API - Updated with prisma db push
 services:
   - type: web
     name: task-management-api
