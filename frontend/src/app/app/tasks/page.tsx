@@ -216,7 +216,10 @@ export default function TasksPage() {
     });
   }, [allTasks, globalFilters.completion]);
 
-  if (error && !isLoading) {
+  const isNoDataError = error && (error as any)?.response?.status === 404;
+  const shouldShowEmptyState = isNoDataError || (!error && !isLoading && tasks.length === 0);
+
+  if (error && !isLoading && !isNoDataError) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -231,17 +234,17 @@ export default function TasksPage() {
             </Button>
           </CardContent>
         </Card>
-      {deleteTaskId && (
-        <DeleteTaskDialog
-          taskId={deleteTaskId}
-          taskTitle={deleteTaskTitle}
-          open={!!deleteTaskId}
-          onOpenChange={(v) => { if (!v) { setDeleteTaskId(null); setDeleteTaskTitle(''); } }}
-        />
-      )}
-    </div>
-  );
-}
+        {deleteTaskId && (
+          <DeleteTaskDialog
+            taskId={deleteTaskId}
+            taskTitle={deleteTaskTitle}
+            open={!!deleteTaskId}
+            onOpenChange={(v) => { if (!v) { setDeleteTaskId(null); setDeleteTaskTitle(''); } }}
+          />
+        )}
+      </div>
+    );
+  }
 
   // Mobile View
   if (!isDesktop) {
@@ -364,7 +367,7 @@ export default function TasksPage() {
         <CardContent className="p-0">
           {isLoading ? (
             <TableSkeleton />
-          ) : tasks.length === 0 ? (
+          ) : shouldShowEmptyState || tasks.length === 0 ? (
             <div className="py-16 text-center">
               <Inbox className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
               <p className="font-medium mb-1">No tasks found</p>
