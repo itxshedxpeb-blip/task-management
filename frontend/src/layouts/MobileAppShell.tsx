@@ -101,7 +101,7 @@ export function MobileAppShell({
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* App Bar */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
+      <header className="sticky top-0 z-40 bg-background border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           {/* Left side */}
           <div className="flex items-center gap-3">
@@ -241,7 +241,7 @@ export function MobileAppShell({
 
       {/* More Menu for "More" tab */}
       {isMorePage && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50 safe-area-bottom">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 safe-area-bottom">
           <div className="p-4 grid grid-cols-2 gap-3">
             {MORE_MENU_ITEMS.map((item) => {
               const Icon = item.icon;

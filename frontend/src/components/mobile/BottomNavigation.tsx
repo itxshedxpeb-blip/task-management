@@ -86,7 +86,7 @@ export function BottomNavigation({ items, className, activeHref }: BottomNavigat
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50 safe-area-bottom',
+        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 safe-area-bottom',
         className
       )}
       style={{

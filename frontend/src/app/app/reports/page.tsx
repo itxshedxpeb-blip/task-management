@@ -56,7 +56,7 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border px-4 py-4">
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
         <h2 className="text-lg font-semibold text-foreground">Reports</h2>
         <p className="text-sm text-muted-foreground mt-1">Task performance overview</p>
       </div>

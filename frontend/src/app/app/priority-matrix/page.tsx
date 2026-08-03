@@ -153,7 +153,7 @@ export default function PriorityMatrixPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Sticky Priority Tabs */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border">
+      <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex overflow-x-auto gap-2 px-4 py-3 scrollbar-hide">
           {PRIORITY_TABS.map((tab) => {
             const count = tab.priority === 'all' ? tasks.length : tasks.filter((t) => t.priority === tab.priority).length;

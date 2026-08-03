@@ -103,7 +103,7 @@ export function MobileAdminShell({
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* App Bar */}
-      <header className="flex-shrink-0 bg-background/95 backdrop-blur-lg border-b border-border">
+      <header className="flex-shrink-0 bg-background border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           {/* Left side */}
           <div className="flex items-center gap-3">

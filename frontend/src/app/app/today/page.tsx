@@ -172,7 +172,7 @@ export default function TodayPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border px-4 py-4">
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
         <h2 className="text-lg font-semibold text-foreground">
           {today.format('dddd, MMMM D')}
         </h2>

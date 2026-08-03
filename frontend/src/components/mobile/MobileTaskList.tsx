@@ -81,7 +81,7 @@ export function MobileTaskList({
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Sticky Search Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border p-4 space-y-3">
+      <div className="sticky top-0 z-10 bg-background border-b border-border p-4 space-y-3">
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

@@ -270,7 +270,7 @@ export default function MobileTaskDetail() {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* App Bar */}
-      <header className="flex-shrink-0 sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
+      <header className="flex-shrink-0 sticky top-0 z-40 bg-background border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-3">
             <Button
@@ -458,7 +458,7 @@ export default function MobileTaskDetail() {
       </main>
 
       {/* Sticky bottom action bar */}
-      <footer className="sticky bottom-0 z-40 bg-background/95 backdrop-blur-lg border-t border-border px-4 py-3 safe-area-bottom">
+      <footer className="sticky bottom-0 z-40 bg-background border-t border-border px-4 py-3 safe-area-bottom">
         {task.status === 'Completed' || task.status === 'Archived' ? (
           <div className="flex items-center justify-center gap-2 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 text-sm font-semibold">
             <CheckCircle2 className="h-4 w-4" />

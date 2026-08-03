@@ -76,7 +76,7 @@ export function FilterPopover({ filters, onClearAll, className }: FilterPopoverP
         className={cn(
           sizing.widthClass,
           "p-0 rounded-xl border shadow-lg",
-          "bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85"
+          "bg-background"
         )}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
