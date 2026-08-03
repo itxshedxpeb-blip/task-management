@@ -15,13 +15,13 @@ export class SessionService {
   private absoluteMs(rememberMe: boolean) {
     const days = rememberMe
       ? this.config.get<number>('session.rememberMeDays') || 30
-      : this.config.get<number>('session.absoluteDays') || 1;
+      : this.config.get<number>('session.absoluteDays') || 30;
     return days * 24 * 60 * 60 * 1000;
   }
 
   private idleMs() {
-    const minutes = this.config.get<number>('session.idleMinutes') || 120;
-    return minutes * 60 * 1000;
+    const days = this.config.get<number>('session.idleDays') || 30;
+    return days * 24 * 60 * 60 * 1000;
   }
 
   private multiDevice() {

@@ -11,8 +11,8 @@ export default () => {
     jwt: {
       secret: process.env.JWT_SECRET,
       refreshSecret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: process.env.JWT_EXPIRES_IN || '30m',
-      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+      expiresIn: process.env.JWT_EXPIRES_IN || '30d',
+      refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
     },
     cookie: {
       refreshName: process.env.COOKIE_REFRESH_NAME || 'refreshToken',
@@ -24,9 +24,9 @@ export default () => {
       signed: process.env.COOKIE_SIGNED === 'true',
     },
     session: {
-      absoluteDays: parseInt(process.env.SESSION_ABSOLUTE_DAYS || '1', 10),
+      absoluteDays: parseInt(process.env.SESSION_ABSOLUTE_DAYS || '30', 10),
       rememberMeDays: parseInt(process.env.SESSION_REMEMBER_ME_DAYS || '30', 10),
-      idleMinutes: parseInt(process.env.SESSION_IDLE_MINUTES || '120', 10),
+      idleDays: parseInt(process.env.SESSION_IDLE_DAYS || '30', 10),
       multiDevice: process.env.SESSION_MULTI_DEVICE === 'true',
     },
     security: {
