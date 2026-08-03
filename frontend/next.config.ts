@@ -37,7 +37,7 @@ const pwaConfig = withPWA({
   register: false,
   skipWaiting: true,
   disable: true,
-  buildExcludes: [/middleware-manifest\.json$/, /icon\.svg$/],
+  buildExcludes: [/middleware-manifest\.json$/, /icon\.svg$/, /_buildManifest\.js$/],
 });
 
 export default pwaConfig(nextConfig as unknown as Parameters<typeof withPWA>[0]);
