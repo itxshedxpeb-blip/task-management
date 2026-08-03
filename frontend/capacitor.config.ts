@@ -19,6 +19,9 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
   },
+  android: {
+    backgroundColor: '#000000',
+  },
 };
 
 export default config;

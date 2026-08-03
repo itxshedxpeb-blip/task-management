@@ -10,7 +10,6 @@
         <domain includeSubdomains="true">task-management-w4ai-swart.vercel.app</domain>
         <trust-anchors>
             <certificates src="system" />
-            <certificates src="user" />
         </trust-anchors>
     </domain-config>
 </network-security-config>
