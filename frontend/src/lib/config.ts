@@ -57,12 +57,28 @@ function getConfig(): AppConfig {
     throw new Error('NEXT_PUBLIC_IMAGE_HOSTNAME environment variable is required in production');
   }
   
+  // In development, provide fallbacks only if not set
+  if (environment === 'development') {
+    return {
+      environment,
+      apiUrl: apiBaseUrl,
+      capabilitiesPath: process.env.NEXT_PUBLIC_CAPABILITIES_PATH || '/system/capabilities',
+      backendUrl: backendUrl || 'http://127.0.0.1:8000',
+      imageHostname: imageHostname || 'localhost',
+      capacitorServerUrl,
+      enableAnalytics: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',
+      enableCrashReporting: process.env.NEXT_PUBLIC_ENABLE_CRASH_REPORTING === 'true',
+      apiTimeout: 30000,
+    };
+  }
+  
+  // In production, no fallbacks - require all environment variables
   return {
     environment,
     apiUrl: apiBaseUrl,
     capabilitiesPath: process.env.NEXT_PUBLIC_CAPABILITIES_PATH || '/system/capabilities',
-    backendUrl: backendUrl || 'http://127.0.0.1:8000',
-    imageHostname: imageHostname || 'localhost',
+    backendUrl: backendUrl!,
+    imageHostname: imageHostname!,
     capacitorServerUrl,
     enableAnalytics: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',
     enableCrashReporting: process.env.NEXT_PUBLIC_ENABLE_CRASH_REPORTING === 'true',

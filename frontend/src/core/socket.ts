@@ -1,11 +1,16 @@
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/features/auth/AuthContext';
+import { config } from '@/lib/config';
 
 let socket: Socket | null = null;
 
 export function getSocket(userId?: string) {
   if (!socket && userId) {
-    socket = io(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/tasks`, {
+    // Use backend URL from config, convert http/https to ws/wss
+    const backendUrl = config.backendUrl;
+    const socketUrl = backendUrl.replace(/^http/, 'ws');
+    
+    socket = io(`${socketUrl}/tasks`, {
       auth: { userId },
       transports: ['websocket', 'polling'],
     });

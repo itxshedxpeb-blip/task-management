@@ -22,7 +22,10 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || 'https://task-management-backend-v2mh.onrender.com';
+    const backendUrl = process.env.BACKEND_URL;
+    if (!backendUrl) {
+      throw new Error('BACKEND_URL environment variable is required');
+    }
     return [
       {
         source: '/api/:path*',
