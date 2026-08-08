@@ -507,34 +507,36 @@ export default function MobileTaskDetail() {
 
       {/* Status Change Dialog */}
       <Dialog open={showStatusMenu} onOpenChange={setShowStatusMenu}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Change Status</DialogTitle>
-            <DialogDescription>
-              Select a new status for this task.
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle className="text-lg">Change Status</DialogTitle>
+            <DialogDescription className="text-sm">
+              Select a new status for this task
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="p-2 space-y-1 max-h-[60vh] overflow-y-auto">
             {STATUS_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleStatusChange(option.value)}
                 className={cn(
-                  'w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all',
+                  'w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left',
                   task.status === option.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'hover:bg-accent text-foreground'
                 )}
               >
                 <div
                   className={cn(
-                    'h-3 w-3 rounded-full',
-                    option.color
+                    'h-2.5 w-2.5 rounded-full shrink-0',
+                    task.status === option.value
+                      ? 'bg-white/90'
+                      : option.color.replace('bg-', 'bg-')
                   )}
                 />
-                <span className="font-medium">{option.label}</span>
+                <span className="font-medium text-sm flex-1">{option.label}</span>
                 {task.status === option.value && (
-                  <CheckCircle2 className="h-4 w-4 ml-auto text-primary" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
                 )}
               </button>
             ))}

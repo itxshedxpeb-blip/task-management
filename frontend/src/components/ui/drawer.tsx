@@ -18,14 +18,14 @@ const Drawer = ({ children, open, onOpenChange, panelClassName }: DrawerProps) =
     <div className="fixed inset-0 z-50 flex">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 transition-opacity opacity-100"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity opacity-100"
         onClick={() => onOpenChange?.(false)}
       />
       
       {/* Drawer Panel */}
       <div
         className={cn(
-          "fixed right-0 top-0 h-full w-full sm:w-[47.5vw] sm:max-w-[960px] sm:min-w-[420px] bg-background shadow-xl transition-transform duration-300 ease-in-out translate-x-0",
+          "fixed right-0 top-0 h-full w-full sm:w-[47.5vw] sm:max-w-[960px] sm:min-w-[420px] bg-background shadow-2xl border-l border-border/50 transition-transform duration-300 ease-in-out translate-x-0",
           panelClassName
         )}
       >

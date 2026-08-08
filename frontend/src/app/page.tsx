@@ -20,5 +20,13 @@ export default function RootPage() {
     }
   }, [user, isLoading, isAuthenticated, router]);
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground" role="status" aria-live="polite">
+        Loading...
+      </div>
+    );
+  }
+
   return null;
 }

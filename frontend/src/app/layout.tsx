@@ -7,6 +7,8 @@ import { AuthProvider } from "@/features/auth/AuthContext";
 import { ToastProvider } from "@/components/ui/toast";
 import { ServiceWorkerUpdate } from "@/components/pwa/ServiceWorkerUpdate";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
+import { GlobalErrorHandlers } from "@/components/error-handling/GlobalErrorHandlers";
+import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,11 +104,14 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider defaultTheme="light">
-          <QueryProvider>
-            <AuthProvider>{children}<ToastProvider /></AuthProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <GlobalErrorHandlers />
+        <ErrorBoundary>
+          <ThemeProvider defaultTheme="light">
+            <QueryProvider>
+              <AuthProvider>{children}<ToastProvider /></AuthProvider>
+            </QueryProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
