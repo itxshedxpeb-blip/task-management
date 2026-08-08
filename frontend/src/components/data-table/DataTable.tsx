@@ -250,7 +250,7 @@ export const DataTable = function DataTable<T = Record<string, any>>({
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filter by column" />
                 </SelectTrigger>
-                <SelectContent position="popper" className="z-[9999]">
+                <SelectContent position="popper" className="z-[var(--z-dropdown)]">
                   {columns.filter((col) => col.filterable).map((col) => (
                     <SelectItem key={col.key as string} value={col.key as string}>
                       {col.label}
@@ -264,7 +264,7 @@ export const DataTable = function DataTable<T = Record<string, any>>({
                   <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Value" />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="z-[9999]">
+                  <SelectContent position="popper" className="z-[var(--z-dropdown)]">
                     <SelectItem value="all">All</SelectItem>
                     {filterOptions.map((option) => (
                       <SelectItem key={option} value={option}>
@@ -443,7 +443,7 @@ export const DataTable = function DataTable<T = Record<string, any>>({
               <SelectTrigger className="w-[60px] sm:w-[70px] text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent position="popper" className="z-[9999]">
+              <SelectContent position="popper" className="z-[var(--z-dropdown)]">
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>

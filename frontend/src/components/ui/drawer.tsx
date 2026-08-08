@@ -12,28 +12,21 @@ interface DrawerProps {
 }
 
 const Drawer = ({ children, open, onOpenChange, panelClassName }: DrawerProps) => {
+  if (!open) return null;
+
   return (
-    <div
-      className={cn(
-        "fixed inset-0 z-50 flex",
-        open ? "visible" : "invisible"
-      )}
-    >
+    <div className="fixed inset-0 z-50 flex">
       {/* Backdrop */}
       <div
-        className={cn(
-          "fixed inset-0 bg-black/50 transition-opacity",
-          open ? "opacity-100" : "opacity-0"
-        )}
+        className="fixed inset-0 bg-black/50 transition-opacity opacity-100"
         onClick={() => onOpenChange?.(false)}
       />
       
       {/* Drawer Panel */}
       <div
         className={cn(
-          "fixed right-0 top-0 h-full w-full sm:w-[47.5vw] sm:max-w-[960px] sm:min-w-[420px] bg-background shadow-xl transition-transform duration-300 ease-in-out",
-          panelClassName,
-          open ? "translate-x-0" : "translate-x-full"
+          "fixed right-0 top-0 h-full w-full sm:w-[47.5vw] sm:max-w-[960px] sm:min-w-[420px] bg-background shadow-xl transition-transform duration-300 ease-in-out translate-x-0",
+          panelClassName
         )}
       >
         <div className="flex h-full flex-col">
