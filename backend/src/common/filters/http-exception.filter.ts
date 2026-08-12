@@ -7,10 +7,13 @@ import {
   Logger,
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { MonitoringService } from '../../modules/monitoring/monitoring.service';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  constructor(private readonly monitoringService?: MonitoringService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -60,6 +63,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
     this.logger.error(
       `${request.method} ${request.url} - RequestId: ${requestId} - Status: ${status} - Message: ${message}`,
     );
+
+    // Record server-side errors (>=500) into the error audit log (fire-and-forget)
+    if (status >= 500 && this.monitoringService) {
+      const user = (request as FastifyRequest & { user?: { id?: string } }).user;
+      this.monitoringService
+        .recordError({
+          requestId,
+          userId: user?.id,
+          source: 'backend',
+          level: 'error',
+          method: request.method,
+          url: request.url,
+          status,
+          message,
+          stackTrace: exception instanceof Error ? exception.stack : undefined,
+          ipAddress: (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || request.ip,
+          userAgent: request.headers['user-agent'],
+        })
+        .catch(() => undefined);
+    }
 
     response.status(status).send({
       success: false,

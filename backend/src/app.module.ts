@@ -23,6 +23,8 @@ import { SearchModule } from './modules/search/search.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { NotesModule } from './modules/notes/notes.module';
 import { AppVersionModule } from './modules/app-version/app-version.module';
+import { HealthModule } from './modules/health/health.module';
+import { MonitoringModule } from './modules/monitoring/monitoring.module';
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { AppVersionModule } from './modules/app-version/app-version.module';
     SettingsModule,
     NotesModule,
     AppVersionModule,
+    HealthModule,
+    MonitoringModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

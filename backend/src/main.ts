@@ -13,6 +13,8 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { GlobalValidationPipe } from './common/pipes/validation.pipe';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { MetricsService } from './modules/monitoring/metrics.service';
+import { MonitoringService } from './modules/monitoring/monitoring.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -34,8 +36,12 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app));
 
   app.useGlobalPipes(new GlobalValidationPipe());
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
+
+  const metricsService = app.get(MetricsService);
+  const monitoringService = app.get(MonitoringService);
+
+  app.useGlobalFilters(new HttpExceptionFilter(monitoringService));
+  app.useGlobalInterceptors(new LoggingInterceptor(metricsService), new TransformInterceptor());
 
   await app.register(helmet, {
     contentSecurityPolicy: nodeEnv === 'production',

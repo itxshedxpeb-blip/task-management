@@ -25,6 +25,7 @@ const DEFAULT_PERMISSIONS: Record<string, string[]> = {
     'settings:read', 'settings:update',
     'auth:read', 'auth:update',
     'note:list', 'note:create', 'note:update', 'note:delete',
+    'admin:monitoring:read',
   ],
   MANAGER: [
     'task:list', 'task:read', 'task:create', 'task:update', 'task:approve',

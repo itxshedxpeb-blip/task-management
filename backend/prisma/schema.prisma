@@ -119,6 +119,29 @@ model AuditLog {
   @@index([createdAt])
 }
 
+model ErrorLog {
+  id         String   @id @default(uuid())
+  requestId  String?
+  userId     String?
+  source     String   @default("backend")
+  level      String   @default("error")
+  method     String?
+  url        String?
+  status     Int?
+  message    String?
+  stackTrace String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([source])
+  @@index([level])
+  @@index([status])
+  @@index([userId])
+}
+
 model LoginAttempt {
   id            String    @id @default(uuid())
   email         String

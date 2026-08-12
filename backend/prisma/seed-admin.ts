@@ -9,8 +9,8 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = 'admin@gmail.com';
-const ADMIN_PASSWORD = 'admin@123';
+const ADMIN_EMAIL = 'shedxpeb@gmail.com';
+const ADMIN_PASSWORD = 'Shedxpeb@111';
 const BCRYPT_ROUNDS = 12;
 
 async function main() {
