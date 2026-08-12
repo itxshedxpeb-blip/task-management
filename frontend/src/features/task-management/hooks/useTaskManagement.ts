@@ -30,7 +30,7 @@ export function useTasks(query?: TaskQuery) {
   return useQuery({
     queryKey: ['tasks', query],
     queryFn: () => taskManagementApi.getAll(query),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds for dynamic task data
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
@@ -68,7 +68,7 @@ export function useDashboardTaskKPIs() {
   return useQuery({
     queryKey: ['dashboard-task-kpis'],
     queryFn: () => taskManagementApi.getDashboardKPIs(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds for dynamic dashboard data
     refetchOnMount: false,
   });
 }

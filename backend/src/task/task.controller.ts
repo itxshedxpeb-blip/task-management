@@ -94,18 +94,6 @@ export class TaskController {
     @Body() dto: CreateTaskDto,
     @CurrentUser() user: CurrentUserType,
   ) {
-    console.log('[TaskController.create] Request received:', {
-      dto: {
-        title: dto.title,
-        assignedUserId: dto.assignedUserId,
-        priority: dto.priority,
-      },
-      currentUser: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-      },
-    });
     const data = await this.taskService.create(dto, user);
     return { message: 'Task created successfully.', data };
   }

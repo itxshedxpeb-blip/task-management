@@ -80,9 +80,7 @@ export function useTasks(params?: {
         query.dateTo = dayjs().format('YYYY-MM-DD');
       }
       
-      console.log('[useTasks] Fetching tasks with query:', query);
       const res = await api.get<BackendResponse<PaginatedResponse<Task>>>('/tasks', { params: query });
-      console.log('[useTasks] Response:', { rows: res.data?.rows?.length, pagination: res.data?.pagination });
       return res.data;
     },
   });
@@ -103,16 +101,13 @@ export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: any) => {
-      console.log('[useCreateTask] Creating task with payload:', data);
       return api.post<BackendResponse<Task>>('/tasks', data);
     },
     onSuccess: () => {
-      console.log('[useCreateTask] Task created successfully, invalidating queries');
       qc.invalidateQueries({ queryKey: ['module-tasks'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
       qc.invalidateQueries({ queryKey: ['dashboard-kpis'] });
       qc.invalidateQueries({ queryKey: ['dashboard-today-tasks'] });
-      console.log('[useCreateTask] Queries invalidated');
     },
     onError: (error) => {
       console.error('[useCreateTask] Task creation failed:', error);

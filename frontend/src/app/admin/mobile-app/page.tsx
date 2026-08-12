@@ -142,9 +142,7 @@ export default function AdminMobileAppPage() {
       formDataToSend.append('minimumSupportedVersion', formData.minimumSupportedVersion);
       formDataToSend.append('isMandatory', formData.isMandatory.toString());
 
-      console.log('Uploading to:', `${config.backendUrl}/app-version/upload`);
       const token = getAccessToken();
-      console.log('Token exists:', !!token);
       
       const response = await fetch(`${config.backendUrl}/app-version/upload`, {
         method: 'POST',
@@ -153,9 +151,6 @@ export default function AdminMobileAppPage() {
         },
         body: formDataToSend,
       });
-
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();

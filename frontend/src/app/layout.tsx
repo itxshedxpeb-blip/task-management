@@ -9,6 +9,7 @@ import { ServiceWorkerUpdate } from "@/components/pwa/ServiceWorkerUpdate";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { GlobalErrorHandlers } from "@/components/error-handling/GlobalErrorHandlers";
 import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
+import { SafeAreaInsets } from "@/components/SafeAreaInsets";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,51 +60,8 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                // Set safe area CSS variables before React loads to prevent hydration mismatch
-                try {
-                  if (typeof window !== 'undefined' && document.documentElement) {
-                    const setSafeAreaInsets = () => {
-                      try {
-                        const style = document.documentElement.style;
-                        const computedStyle = getComputedStyle(document.documentElement);
-                        const safeAreaTop = computedStyle.getPropertyValue('safe-area-inset-top') || '0px';
-                        const safeAreaRight = computedStyle.getPropertyValue('safe-area-inset-right') || '0px';
-                        const safeAreaBottom = computedStyle.getPropertyValue('safe-area-inset-bottom') || '0px';
-                        const safeAreaLeft = computedStyle.getPropertyValue('safe-area-inset-left') || '0px';
-                        
-                        style.setProperty('--safe-area-inset-top', safeAreaTop);
-                        style.setProperty('--safe-area-inset-right', safeAreaRight);
-                        style.setProperty('--safe-area-inset-bottom', safeAreaBottom);
-                        style.setProperty('--safe-area-inset-left', safeAreaLeft);
-                      } catch (e) {
-                        // Silently fail if getComputedStyle is not available
-                        console.warn('Failed to set safe area insets:', e);
-                      }
-                    };
-                    
-                    // Run immediately
-                    setSafeAreaInsets();
-                    
-                    // Also run on load in case values change
-                    if (document.readyState === 'loading') {
-                      document.addEventListener('DOMContentLoaded', setSafeAreaInsets);
-                    }
-                  }
-                } catch (e) {
-                  // Silently fail if script execution fails
-                  console.warn('Safe area script failed:', e);
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
       <body className="min-h-full flex flex-col">
+        <SafeAreaInsets />
         <GlobalErrorHandlers />
         <ErrorBoundary>
           <ThemeProvider defaultTheme="light">

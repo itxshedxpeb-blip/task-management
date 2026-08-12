@@ -194,14 +194,18 @@ export default function AdminTasksPage() {
       if (globalFilters.sortOrder) params.sortOrder = globalFilters.sortOrder;
       if (globalFilters.dateFrom) params.dateFrom = globalFilters.dateFrom;
       if (globalFilters.dateTo) params.dateTo = globalFilters.dateTo;
-      const res: any = await adminApi.getAllTasks(params);
-      const data = res?.data || res;
+      
+      // Parallel API calls to avoid waterfall
+      const [tasksRes, empRes] = await Promise.all([
+        adminApi.getAllTasks(params),
+        adminApi.getEmployees(),
+      ]);
+      
+      const data = tasksRes?.data || tasksRes;
       setTasks(data?.rows || []);
       setPagination(data?.pagination || null);
-      
-      // Also fetch employees for task assignment
-      const empRes: any = await adminApi.getEmployees();
-      setEmployees(empRes?.data || empRes || []);
+      const employeesData = empRes?.data || empRes;
+      setEmployees(Array.isArray(employeesData) ? employeesData : employeesData?.rows || []);
     } catch {
       setError(true);
     } finally {
@@ -214,7 +218,6 @@ export default function AdminTasksPage() {
     if (!socket) return;
 
     const handleTaskEvent = () => {
-      console.log('[AdminTasksPage] Task event received, refetching data');
       fetchData();
     };
 

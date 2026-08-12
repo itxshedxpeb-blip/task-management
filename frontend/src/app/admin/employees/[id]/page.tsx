@@ -71,7 +71,6 @@ export default function AdminEmployeeDetailPage() {
     if (!socket) return;
 
     const handleTaskEvent = () => {
-      console.log('[AdminEmployeeDetailPage] Task event received, refetching data');
       refetch();
       tasksQuery.refetch();
       timelineQuery.refetch();

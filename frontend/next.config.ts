@@ -1,20 +1,23 @@
 import type { NextConfig } from "next";
 import withPWA from 'next-pwa';
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
   allowedDevOrigins: ['127.0.0.1', '10.0.2.2'],
   images: {
-    unoptimized: true,
+    unoptimized: false,
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: process.env.IMAGE_HOSTNAME || '**',
       },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts'],
@@ -43,4 +46,9 @@ const pwaConfig = withPWA({
   buildExcludes: [/middleware-manifest\.json$/, /icon\.svg$/, /_buildManifest\.js$/],
 });
 
-export default pwaConfig(nextConfig as unknown as Parameters<typeof withPWA>[0]);
+const bundleAnalyzerConfig = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+// @ts-ignore - Type incompatibility between next-pwa and @next/bundle-analyzer is a known issue
+export default bundleAnalyzerConfig(pwaConfig(nextConfig as unknown as Parameters<typeof withPWA>[0]));

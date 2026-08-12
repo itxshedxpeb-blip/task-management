@@ -5,6 +5,7 @@ import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import helmet from '@fastify/helmet';
+import compression from '@fastify/compress';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
@@ -71,6 +72,12 @@ async function bootstrap() {
     limits: {
       fileSize: 100 * 1024 * 1024,
     },
+  });
+
+  // Enable gzip/brotli compression for better performance
+  await app.register(compression, {
+    encodings: ['gzip', 'deflate', 'br'],
+    threshold: 1024, // Only compress responses larger than 1KB
   });
 
   if (nodeEnv !== 'production') {

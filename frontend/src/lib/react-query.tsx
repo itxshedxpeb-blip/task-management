@@ -20,7 +20,12 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // 5 minutes
+            staleTime: (query) => {
+              // Static data can be cached longer
+              if (query.meta?.static) return 10 * 60 * 1000; // 10 minutes
+              // User-facing data should be fresher
+              return 30 * 1000; // 30 seconds
+            },
             gcTime: 10 * 60 * 1000, // 10 minutes (cacheTime in v5)
             refetchOnWindowFocus: false,
             refetchOnReconnect: false,

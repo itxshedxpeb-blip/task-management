@@ -76,11 +76,6 @@ export class CreateTaskDto {
 // Add validation pipe logging
 export class CreateTaskDtoValidationPipe {
   transform(value: any) {
-    console.log('[CreateTaskDtoValidationPipe] Incoming DTO:', {
-      title: value?.title,
-      assignedUserId: value?.assignedUserId,
-      priority: value?.priority,
-    });
     return value;
   }
 }

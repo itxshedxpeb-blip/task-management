@@ -47,24 +47,16 @@ export class TaskEventsGateway
     }
   }
 
-  emit(event: TaskEventType, payload: Omit<TaskSocketEvent, 'event' | 'at'> & { assignedUserId?: string }) {
+  emit(event: string, payload: any) {
     if (!this.server) return;
     const eventData = { event, ...payload, at: new Date().toISOString() };
 
-    console.log('[TaskEventsGateway.emit] Emitting event:', {
-      event,
-      assignedUserId: payload.assignedUserId,
-      hasServer: !!this.server,
-    });
-
     // Broadcast to all tasks room
     this.server.to('tasks').emit(event, eventData);
-    console.log('[TaskEventsGateway.emit] Emitted to tasks room');
 
     // Also emit to specific assigned user if provided
     if (payload.assignedUserId) {
       this.server.to(`user:${payload.assignedUserId}`).emit(event, eventData);
-      console.log('[TaskEventsGateway.emit] Emitted to user room:', `user:${payload.assignedUserId}`);
     }
   }
 }

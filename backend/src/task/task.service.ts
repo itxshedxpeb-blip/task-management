@@ -54,11 +54,6 @@ export class TaskService extends BaseQueryService {
   }
 
   async findAll(query: GetTasksDto, currentUser?: CurrentUser) {
-    console.log('[TaskService.findAll] Query called with:', {
-      query,
-      currentUser: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role } : null,
-    });
-
     const { dueDateFrom, dueDateTo, ...restQuery } = query;
 
     const extraWhere: WhereClause = {};
@@ -74,15 +69,9 @@ export class TaskService extends BaseQueryService {
 
     if (currentUser && !this.canViewAll(currentUser)) {
       extraWhere.assignedUserId = currentUser.id;
-      console.log('[TaskService.findAll] Employee filtering: assignedUserId =', currentUser.id);
-    } else {
-      console.log('[TaskService.findAll] Admin or no user - no assignedUserId filter');
     }
 
-    console.log('[TaskService.findAll] Final where clause:', extraWhere);
-
     const result = await super.findAll(restQuery, extraWhere, TASK_INCLUDE);
-    console.log('[TaskService.findAll] Result count:', result.rows?.length || 0);
     
     return result;
   }
@@ -96,20 +85,6 @@ export class TaskService extends BaseQueryService {
   }
 
   async create(dto: CreateTaskDto, currentUser: CurrentUser) {
-    // Log incoming payload
-    console.log('[TaskService.create] Incoming payload:', {
-      dto: {
-        title: dto.title,
-        assignedUserId: dto.assignedUserId,
-        priority: dto.priority,
-      },
-      currentUser: {
-        id: currentUser.id,
-        name: currentUser.name,
-        role: currentUser.role,
-      },
-    });
-
     // Admins can assign to others, employees can only assign to themselves
     let assignedUserId = currentUser.id;
     let assignedUserName = currentUser.name || 'Unknown';
@@ -124,32 +99,16 @@ export class TaskService extends BaseQueryService {
         if (assignedUser) {
           assignedUserId = dto.assignedUserId;
           assignedUserName = assignedUser.name || 'Unknown';
-          console.log('[TaskService.create] Admin assigning to employee:', {
-            assignedUserId,
-            assignedUserName,
-          });
         } else {
-          console.error('[TaskService.create] Assigned user not found:', dto.assignedUserId);
           throw new Error(`Assigned user with ID ${dto.assignedUserId} not found`);
         }
-      } else {
-        console.warn('[TaskService.create] Admin creating task without assigning to employee. Task will be assigned to admin.');
       }
-    } else {
-      // Employee creating task - always assign to themselves
-      console.log('[TaskService.create] Employee creating task for themselves');
     }
 
     // Validate assignedUserId is set
     if (!assignedUserId) {
-      console.error('[TaskService.create] assignedUserId is null/undefined');
       throw new Error('assignedUserId must be set');
     }
-
-    console.log('[TaskService.create] Final assignment:', {
-      assignedUserId,
-      assignedUserName,
-    });
 
     const task = await this.prisma.task.create({
       data: {
@@ -172,15 +131,6 @@ export class TaskService extends BaseQueryService {
       include: TASK_INCLUDE,
     });
 
-    console.log('[TaskService.create] Task saved to database:', {
-      id: task.id,
-      taskId: task.taskId,
-      assignedUserId: task.assignedUserId,
-      assignedUserName: task.assignedUserName,
-      createdById: task.createdById,
-      createdByName: task.createdByName,
-    });
-
     // Verify the task was saved correctly by querying it back
     const verifyTask = await this.prisma.task.findUnique({
       where: { id: task.id },
@@ -192,7 +142,6 @@ export class TaskService extends BaseQueryService {
         createdByName: true,
       },
     });
-    console.log('[TaskService.create] Verification query result:', verifyTask);
 
     await this.logActivity(
       task.id,
@@ -203,13 +152,8 @@ export class TaskService extends BaseQueryService {
       [{ field: 'status', newValue: 'Todo' }],
     );
 
-    console.log('[TaskService.create] Emitting Socket.IO event:', {
-      taskId: task.id,
-      assignedUserId,
-    });
     this.events.emit('task:created', { taskId: task.id, task, assignedUserId });
     
-    console.log('[TaskService.create] Task creation completed successfully');
     return task;
   }
 
@@ -854,14 +798,6 @@ export class TaskService extends BaseQueryService {
     performedByName: string,
     changes?: ActivityChange[],
   ) {
-    console.log('[TaskService.logActivity] Creating activity log:', {
-      taskId,
-      activityType,
-      description,
-      performedBy,
-      performedByName,
-      changes,
-    });
     const activityLog = await this.prisma.taskActivityLog.create({
       data: {
         taskId,
@@ -872,11 +808,6 @@ export class TaskService extends BaseQueryService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         metadata: changes && changes.length > 0 ? ({ changes } as any) : undefined,
       },
-    });
-    console.log('[TaskService.logActivity] Activity log created:', {
-      id: activityLog.id,
-      taskId: activityLog.taskId,
-      activityType: activityLog.activityType,
     });
   }
 }

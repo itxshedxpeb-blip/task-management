@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import {
   Users,
   CheckSquare,
@@ -61,6 +61,8 @@ function StatCard({
 export default function AdminDashboardPage() {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const socket = useTaskSocket();
+  
+  // Parallel API calls for dashboard data
   const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: () => adminApi.getDashboardStats(),
@@ -75,7 +77,6 @@ export default function AdminDashboardPage() {
     if (!socket) return;
 
     const handleTaskEvent = () => {
-      console.log('[AdminDashboardPage] Task event received, refetching data');
       refetch();
     };
 
