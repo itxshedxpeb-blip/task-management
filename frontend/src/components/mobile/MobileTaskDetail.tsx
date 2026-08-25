@@ -16,6 +16,7 @@ import {
   Edit,
   Trash2,
   Share2,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,10 +45,14 @@ import {
   useUpdateTask,
   useToggleChecklistItem,
   useDeleteTask,
+  useTaskActivities,
+  useCreateActivity,
 } from '@/modules/tasks/hooks/useTasks';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
-import type { Task, ChecklistItem, TaskActivity, TaskStatus } from '@/features/task-management/types';
+import type { Task, ChecklistItem, TaskStatus } from '@/features/task-management/types';
+import { ActivityFollowUpTimeline } from '@/features/task-management/components/ActivityFollowUpTimeline';
+import { AddFollowUpForm } from '@/features/task-management/components/AddFollowUpForm';
 import { StatusSmartBadge, PrioritySmartBadge } from '@/features/task-management/components/shared/SmartBadge';
 import { CountdownTimer } from '@/features/task-management/components/shared/CountdownTimer';
 import { getDaysOverdue } from '@/features/task-management/utils/taskFormatters';
@@ -148,50 +153,65 @@ function ChecklistSection({ task }: { task: Task }) {
   );
 }
 
-function ActivityTimeline({ task }: { task: Task }) {
-  const activities: TaskActivity[] = task.activityHistory || [];
+function ActivitySection({ task }: { task: Task }) {
+  const { data: activitiesData, isLoading: activitiesLoading } = useTaskActivities(task.id);
+  const createActivity = useCreateActivity();
+  const [showFollowUpForm, setShowFollowUpForm] = useState(false);
+
+  const activities = activitiesData?.rows || [];
+
+  const handleCreateActivity = async (data: {
+    activityType: string;
+    description: string;
+    nextFollowUpDate?: string;
+    nextFollowUpTime?: string;
+    nextFollowUpAction?: string;
+    status?: TaskStatus;
+    progress?: number;
+  }) => {
+    await createActivity.mutateAsync({
+      taskId: task.id,
+      data: {
+        activityType: data.activityType,
+        description: data.description,
+        ...(data.nextFollowUpDate && { nextFollowUpDate: data.nextFollowUpDate }),
+        ...(data.nextFollowUpTime && { nextFollowUpTime: data.nextFollowUpTime }),
+        ...(data.nextFollowUpAction && { nextFollowUpAction: data.nextFollowUpAction }),
+        ...(data.status && { status: data.status }),
+        ...(data.progress !== undefined && { progress: data.progress }),
+      },
+    });
+  };
 
   return (
-    <Card className="mobile-card">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          Activity ({activities.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {activities.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No activity recorded.
-          </p>
-        ) : (
-          <div className="relative">
-            <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
-            <div className="space-y-4">
-              {activities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-3 relative"
-                >
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 z-10">
-                    <Circle className="h-2 w-2 fill-primary text-primary" />
-                  </div>
-                  <div className="min-w-0 pt-0.5">
-                    <p className="text-sm text-foreground">
-                      {activity.description}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {activity.performedByName} ·{' '}
-                      {formatDateTime(activity.timestamp)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      {activitiesLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 rounded-xl bg-muted/30 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <ActivityFollowUpTimeline activities={activities} />
+      )}
+
+      <Button
+        variant="outline"
+        className="w-full border-dashed border-primary/30 text-primary hover:bg-primary/5 h-11"
+        onClick={() => setShowFollowUpForm(true)}
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Add Follow-up
+      </Button>
+
+      <AddFollowUpForm
+        open={showFollowUpForm}
+        onOpenChange={setShowFollowUpForm}
+        onSubmit={handleCreateActivity}
+        currentStatus={task.status}
+        currentProgress={task.progress ?? 0}
+      />
+    </div>
   );
 }
 
@@ -453,8 +473,8 @@ export default function MobileTaskDetail() {
           <ChecklistSection task={task} />
         )}
 
-        {/* Activity Timeline */}
-        <ActivityTimeline task={task} />
+        {/* Activity & Follow-up */}
+        <ActivitySection task={task} />
       </main>
 
       {/* Sticky bottom action bar */}

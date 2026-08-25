@@ -6,7 +6,6 @@
  */
 
 import { api } from '@/core/api';
-import { guardModuleApi } from '@/core/api/capabilities';
 import {
   Task,
   EmployeePerformanceStats,
@@ -22,6 +21,9 @@ import {
   TaskStats,
   DashboardTaskKPIs,
   SalaryAdjustmentQuery,
+  TaskActivity,
+  CreateActivityDto,
+  UpdateActivityDto,
 } from '../types';
 
 interface BackendResponse<T> {
@@ -41,7 +43,7 @@ interface PaginatedResponse<T> {
   };
 }
 
-export const taskManagementApi = guardModuleApi('task', {
+export const taskManagementApi = {
   // Task CRUD
   async getAll(query?: TaskQuery): Promise<Task[]> {
     const params: Record<string, any> = {};
@@ -155,4 +157,28 @@ export const taskManagementApi = guardModuleApi('task', {
     const res = await api.post<BackendResponse<SalaryAdjustment>>(`/tasks/salary-adjustments/${id}/process`, { processedBy });
     return res.data;
   },
-});
+
+  // ─── Task Activities / Follow-ups ───────────────────────────────────────────
+
+  async getActivities(taskId: string, page = 1, limit = 50): Promise<{ rows: TaskActivity[]; pagination: { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } }> {
+    const res = await api.get<BackendResponse<{ rows: TaskActivity[]; pagination: any }>>(
+      `/tasks/${taskId}/activities`,
+      { params: { page, limit } },
+    );
+    return res.data;
+  },
+
+  async createActivity(taskId: string, data: CreateActivityDto): Promise<TaskActivity> {
+    const res = await api.post<BackendResponse<TaskActivity>>(`/tasks/${taskId}/activities`, data);
+    return res.data;
+  },
+
+  async updateActivity(taskId: string, activityId: string, data: UpdateActivityDto): Promise<TaskActivity> {
+    const res = await api.put<BackendResponse<TaskActivity>>(`/tasks/${taskId}/activities/${activityId}`, data);
+    return res.data;
+  },
+
+  async deleteActivity(taskId: string, activityId: string): Promise<void> {
+    await api.delete<BackendResponse<void>>(`/tasks/${taskId}/activities/${activityId}`);
+  },
+};

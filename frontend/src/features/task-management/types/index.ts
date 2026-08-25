@@ -132,6 +132,11 @@ export interface Task {
   // Activity History (Audit Trail)
   activityHistory?: TaskActivity[];
   
+  // Next Follow-up (computed from latest activity with follow-up scheduled)
+  nextFollowUpDate?: string | null;
+  nextFollowUpTime?: string | null;
+  nextFollowUpAction?: string | null;
+  
   // Metadata
   createdAt: Date;
   updatedAt: Date;
@@ -156,6 +161,19 @@ export interface Task {
 // ─── Task Activity History (Audit Trail) ───────────────────────────────────────
 
 export type TaskActivityType =
+  | 'TaskCreated'
+  | 'Comment'
+  | 'ProgressUpdate'
+  | 'FollowUp'
+  | 'IssueFound'
+  | 'WorkCompleted'
+  | 'StatusChanged'
+  | 'AssignmentChanged'
+  | 'DueDateChanged'
+  | 'PriorityChanged'
+  | 'InternalNote'
+  | 'FollowUpCompleted'
+  | 'TaskCompleted'
   | 'Created'
   | 'Assigned'
   | 'Started'
@@ -165,10 +183,11 @@ export type TaskActivityType =
   | 'Archived'
   | 'Cancelled'
   | 'Reassigned'
+  | 'Progress Updated'
+  | 'Checklist Updated'
   | 'Priority Changed'
   | 'Due Date Changed'
-  | 'Progress Updated'
-  | 'Checklist Updated';
+  | 'Updated';
 
 export interface TaskActivity {
   id: string;
@@ -177,8 +196,41 @@ export interface TaskActivity {
   description: string;
   performedBy: string;
   performedByName: string;
+  /** @deprecated Use createdAt instead */
   timestamp: Date;
+  createdAt: Date;
   metadata?: Record<string, any>;
+  nextFollowUpDate?: string | null;
+  nextFollowUpTime?: string | null;
+  nextFollowUpAction?: string | null;
+  taskStatus?: string | null;
+}
+
+// ─── Follow-up Types ───────────────────────────────────────────────────────
+
+export interface TaskFollowUpInfo {
+  id: string;
+  nextFollowUpDate: string | null;
+  nextFollowUpTime: string | null;
+  nextFollowUpAction: string | null;
+}
+
+export interface CreateActivityDto {
+  activityType: TaskActivityType;
+  description: string;
+  nextFollowUpDate?: string;
+  nextFollowUpTime?: string;
+  nextFollowUpAction?: string;
+  status?: string;
+}
+
+export interface UpdateActivityDto {
+  activityType?: TaskActivityType;
+  description?: string;
+  nextFollowUpDate?: string;
+  nextFollowUpTime?: string;
+  nextFollowUpAction?: string;
+  status?: string;
 }
 
 // ─── Notification Types ───────────────────────────────────────────────────────

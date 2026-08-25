@@ -131,7 +131,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
 
   // Sort activities by timestamp (newest first)
   const sortedActivities = [...activities].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   return (
@@ -181,7 +181,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
                       </span>
                     </div>
                     <span className="text-[10px] text-slate-600 whitespace-nowrap">
-                      {formatDateTime(activity.timestamp)}
+                      {formatDateTime(activity.createdAt)}
                     </span>
                   </div>
 

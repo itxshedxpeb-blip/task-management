@@ -40,7 +40,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function TaskCard({ task }: { task: Task }) {
-  const isOverdue = task.dueDate && dayjs(task.dueDate).isBefore(dayjs(), 'day') && task.status !== 'Completed';
+  // Use follow-up date if available, fall back to dueDate
+  const effectiveDate = task.nextFollowUpDate || task.dueDate;
+  const isOverdue = effectiveDate && dayjs(effectiveDate).isBefore(dayjs(), 'day') && task.status !== 'Completed';
+  const isFollowUp = !!task.nextFollowUpDate;
   
   return (
     <Link href={`/app/tasks/${task.id}`}>
@@ -63,13 +66,16 @@ function TaskCard({ task }: { task: Task }) {
               {isOverdue && (
                 <Badge variant="destructive" className="text-xs">Late</Badge>
               )}
+              {isFollowUp && (
+                <Badge variant="outline" className="text-xs text-violet-600 bg-violet-50 border-violet-200">Follow-up</Badge>
+              )}
             </div>
             <div className={cn('h-2 w-2 rounded-full shrink-0', PRIORITY_DOT[task.priority])} />
           </div>
-          {task.dueDate && (
+          {effectiveDate && (
             <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
               <CalendarIcon className="h-3 w-3" />
-              {formatDate(task.dueDate)}
+              {isFollowUp ? 'Follow-up: ' : ''}{formatDate(effectiveDate)}
             </div>
           )}
         </CardContent>
@@ -140,21 +146,37 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 export default function TodayPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const today = dayjs();
-  const { data, isLoading, error, refetch } = useTasks({ pageSize: 500 });
+  const { data, isLoading, error, refetch } = useTasks({ pageSize: 500, showAll: true });
 
   const tasks = data?.rows || [];
 
   const todayKey = `${today.year()}-${String(today.month() + 1).padStart(2, '0')}-${String(today.date()).padStart(2, '0')}`;
+
+  /** Returns the effective date string (YYYY-MM-DD) for a task, preferring nextFollowUpDate over dueDate */
+  const getEffectiveDate = (t: Task): string | null => {
+    // Prefer nextFollowUpDate (from activity follow-ups) if set
+    if (t.nextFollowUpDate) {
+      const d = dayjs(t.nextFollowUpDate);
+      if (d.isValid()) return d.format('YYYY-MM-DD');
+    }
+    // Fall back to dueDate
+    if (t.dueDate) {
+      const d = dayjs(t.dueDate);
+      if (d.isValid()) return d.format('YYYY-MM-DD');
+    }
+    return null;
+  };
+
   const todayTasks = tasks.filter((t) => {
-    if (!t.dueDate) return false;
-    const d = dayjs(t.dueDate);
-    return d.year() === today.year() && d.month() === today.month() && d.date() === today.date();
+    const effective = getEffectiveDate(t);
+    if (!effective) return false;
+    return effective === todayKey;
   });
 
   const overdueTasks = tasks.filter((t) => {
-    if (!t.dueDate) return false;
-    const d = dayjs(t.dueDate);
-    return d.isBefore(today, 'day') && t.status !== 'Completed';
+    const effective = getEffectiveDate(t);
+    if (!effective) return false;
+    return dayjs(effective).isBefore(today, 'day') && t.status !== 'Completed';
   });
 
   if (error) {

@@ -164,4 +164,77 @@ export function useToggleChecklistItem() {
   });
 }
 
+// ─── Activity / Follow-up Hooks ──────────────────────────────────────────────
+
+interface ActivityRow {
+  id: string;
+  taskId: string;
+  activityType: string;
+  description: string;
+  performedBy: string;
+  performedByName: string;
+  metadata?: Record<string, unknown>;
+  nextFollowUpDate?: string | null;
+  nextFollowUpTime?: string | null;
+  nextFollowUpAction?: string | null;
+  taskStatus?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ActivityListResponse {
+  rows: ActivityRow[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+}
+
+export function useTaskActivities(taskId: string) {
+  return useQuery({
+    queryKey: ['module-task-activities', taskId],
+    queryFn: async () => {
+      const res = await api.get<BackendResponse<ActivityListResponse>>(
+        `/tasks/${taskId}/activities`,
+        { params: { page: 1, limit: 200 } },
+      );
+      return res.data;
+    },
+    enabled: !!taskId,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useCreateActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, data }: { taskId: string; data: Record<string, unknown> }) =>
+      api.post<BackendResponse<ActivityRow>>(`/tasks/${taskId}/activities`, data),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['module-task-activities', variables.taskId] });
+      qc.invalidateQueries({ queryKey: ['module-task', variables.taskId] });
+      qc.invalidateQueries({ queryKey: ['module-tasks'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-kpis'] });
+    },
+  });
+}
+
+export function useDeleteActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, activityId }: { taskId: string; activityId: string }) =>
+      api.delete<BackendResponse<void>>(`/tasks/${taskId}/activities/${activityId}`),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['module-task-activities', variables.taskId] });
+      qc.invalidateQueries({ queryKey: ['module-task', variables.taskId] });
+    },
+  });
+}
+
 export { useTaskSocket };

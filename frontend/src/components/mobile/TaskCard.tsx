@@ -11,6 +11,8 @@ import {
   Trash2,
   Clock,
   User,
+  AlertTriangle,
+  Bell,
 } from 'lucide-react';
 import { StatusSmartBadge } from '@/features/task-management/components/shared/SmartBadge';
 import {
@@ -138,6 +140,16 @@ const TaskCard = memo(function TaskCard({
             <span className="inline-flex items-center h-5 px-1 text-[10px] text-muted-foreground gap-1">
               <Clock className="h-3 w-3" />
               {formatTaskAge(task.createdAt)}
+            </span>
+          )}
+          {/* Next follow-up indicator */}
+          {'nextFollowUpDate' in task && task.nextFollowUpDate && (
+            <span className="inline-flex items-center h-5 px-1.5 rounded-md text-[10px] font-medium border gap-1 text-violet-600 bg-violet-500/10 border-violet-500/30">
+              <Bell className="h-3 w-3" />
+              Follow-up: {(() => {
+                const d = new Date(task.nextFollowUpDate as string);
+                return `${d.getDate()} ${d.toLocaleString('en', { month: 'short' })}`;
+              })()}
             </span>
           )}
         </div>

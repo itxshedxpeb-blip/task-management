@@ -274,6 +274,63 @@ export function useProcessSalaryAdjustment() {
   });
 }
 
+// ─── Task Activity Hooks ─────────────────────────────────────────────────────
+
+export function useTaskActivities(taskId: string) {
+  return useQuery({
+    queryKey: ['task-activities', taskId],
+    queryFn: () => taskManagementApi.getActivities(taskId),
+    enabled: !!taskId,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useCreateActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, data }: { taskId: string; data: import('../types').CreateActivityDto }) =>
+      taskManagementApi.createActivity(taskId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['task-activities', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['module-task', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['module-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-stats'] });
+    },
+  });
+}
+
+export function useUpdateActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, activityId, data }: { taskId: string; activityId: string; data: import('../types').UpdateActivityDto }) =>
+      taskManagementApi.updateActivity(taskId, activityId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['task-activities', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['module-task', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] });
+    },
+  });
+}
+
+export function useDeleteActivity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, activityId }: { taskId: string; activityId: string }) =>
+      taskManagementApi.deleteActivity(taskId, activityId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['task-activities', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['module-task', variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] });
+    },
+  });
+}
+
 // ─── Notification Hooks ───────────────────────────────────────────────────────
 
 export function useNotifications(userId?: string) {

@@ -13,8 +13,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Search,
-  Bell,
   Sun,
   Moon,
   Menu,
@@ -23,7 +21,6 @@ import {
 } from 'lucide-react';
 import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -295,24 +292,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                placeholder="Search tasks, notes..."
-                className="h-9 w-64 lg:w-80 pl-10 pr-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
           </div>
 
           <div className="flex items-center gap-1">
             <PWAInstallButton variant="icon" showInHeader />
-            
-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 flex items-center justify-center p-0 bg-blue-500 text-white text-[9px] border-0">
-                0
-              </Badge>
-            </Button>
 
             <Button
               variant="ghost"

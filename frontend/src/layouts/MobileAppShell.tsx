@@ -11,14 +11,11 @@ import {
   User,
   Settings,
   Menu,
-  Bell,
   LogOut,
-  Search,
   X,
   BarChart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,8 +74,6 @@ export function MobileAppShell({
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const initials = user?.name
     ? user.name
@@ -134,101 +129,56 @@ export function MobileAppShell({
             )}
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            {showSearch ? (
-              <div className="flex items-center gap-2 animate-in slide-in-from-right-2">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-40 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  autoFocus
-                />
+          {/* Right side - Profile only */}
+          <div className="flex items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   size="icon-sm"
                   variant="ghost"
-                  onClick={() => {
-                    setShowSearch(false);
-                    setSearchQuery('');
-                  }}
-                  className="h-9 w-9"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => setShowSearch(true)}
                   className="h-10 w-10"
                 >
-                  <Search className="h-5 w-5" />
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary text-xs font-semibold">
+                      {initials}
+                    </span>
+                  </div>
                 </Button>
-                
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  className="h-10 w-10 relative"
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
-                </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="h-10 w-10"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary text-xs font-semibold">
-                          {initials}
-                        </span>
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuLabel>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{user?.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {user?.email}
-                        </span>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
-                      {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push('/app/profile')}>
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/app/settings')}>
-                      Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="text-destructive">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{user?.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+                  {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/app/profile')}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/app/settings')}>
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {rightAction}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className={cn('flex-1 overflow-y-auto -webkit-overflow-scrolling: touch', className)} style={{ WebkitOverflowScrolling: 'touch' }}>
+      <main className={cn('flex-1 overflow-y-auto', className)} style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="pb-20">
           {children}
         </div>

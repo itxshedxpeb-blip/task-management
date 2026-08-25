@@ -18,7 +18,10 @@ const OPEN_STATUSES: TaskStatus[] = [
 ];
 
 const TASK_INCLUDE = {
-  activities: { orderBy: { createdAt: 'desc' as const }, take: 30 },
+  activities: {
+    orderBy: { createdAt: 'desc' as const },
+    take: 30,
+  },
   labels: { include: { label: true } },
 };
 
@@ -73,6 +76,9 @@ export class TaskService extends BaseQueryService {
 
     const result = await super.findAll(restQuery, extraWhere, TASK_INCLUDE);
     
+    // Enrich each task with next follow-up info
+    result.rows = result.rows.map((task: any) => this.enrichTaskWithFollowUp(task));
+    
     return result;
   }
 
@@ -81,6 +87,31 @@ export class TaskService extends BaseQueryService {
     if (currentUser) {
       this.assertOwnership(task, currentUser);
     }
+    return this.enrichTaskWithFollowUp(task);
+  }
+
+  /**
+   * Compute next follow-up info from the task's activities.
+   */
+  private enrichTaskWithFollowUp(task: any) {
+    if (!task.activities || task.activities.length === 0) {
+      return task;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Find activities with upcoming follow-ups
+    const followUps = task.activities
+      .filter((a: any) => a.nextFollowUpDate && a.nextFollowUpDate >= today)
+      .sort((a: any, b: any) => a.nextFollowUpDate.localeCompare(b.nextFollowUpDate));
+
+    if (followUps.length > 0) {
+      const next = followUps[0];
+      task.nextFollowUpDate = next.nextFollowUpDate;
+      task.nextFollowUpTime = next.nextFollowUpTime;
+      task.nextFollowUpAction = next.nextFollowUpAction;
+    }
+
     return task;
   }
 
@@ -145,7 +176,7 @@ export class TaskService extends BaseQueryService {
 
     await this.logActivity(
       task.id,
-      'Created',
+      'TaskCreated',
       `Task "${task.title}" created`,
       currentUser.id,
       currentUser.name || 'Unknown',
@@ -201,6 +232,16 @@ export class TaskService extends BaseQueryService {
       track('category', existing.category, dto.category);
       data.category = dto.category;
     }
+    if (dto.assignedUserId !== undefined && dto.assignedUserId !== existing.assignedUserId) {
+      // Fetch the new assignee name
+      const newAssignee = await this.prisma.user.findUnique({
+        where: { id: dto.assignedUserId },
+        select: { name: true },
+      });
+      track('assignedUserId', existing.assignedUserId || '', dto.assignedUserId);
+      data.assignedUserId = dto.assignedUserId;
+      data.assignedUserName = newAssignee?.name || 'Unknown';
+    }
     if (dto.notes !== undefined) {
       data.notes = dto.notes;
     }
@@ -253,12 +294,62 @@ export class TaskService extends BaseQueryService {
       include: TASK_INCLUDE,
     });
 
-    if (changes.length > 0) {
-      const description =
-        changes[0].field === 'status'
-          ? `Status changed to ${changes[0].newValue}`
-          : `Task updated: ${changes.map((c) => c.field).join(', ')}`;
-      await this.logActivity(id, 'Updated', description, currentUser.id, currentUser.name || 'Unknown', changes);
+    // Log specific activity types for each kind of change
+    for (const change of changes) {
+      if (change.field === 'status') {
+        await this.logActivity(
+          id,
+          'StatusChanged',
+          `Task status changed from ${change.oldValue} to ${change.newValue}`,
+          currentUser.id,
+          currentUser.name || 'Unknown',
+          [change],
+        );
+      } else if (change.field === 'dueDate') {
+        const oldDate = change.oldValue ? new Date(change.oldValue as string).toLocaleDateString() : 'None';
+        const newDate = change.newValue ? new Date(change.newValue as string).toLocaleDateString() : 'None';
+        await this.logActivity(
+          id,
+          'DueDateChanged',
+          `Due date changed from ${oldDate} to ${newDate}`,
+          currentUser.id,
+          currentUser.name || 'Unknown',
+          [change],
+        );
+      } else if (change.field === 'priority') {
+        await this.logActivity(
+          id,
+          'PriorityChanged',
+          `Priority changed from ${change.oldValue} to ${change.newValue}`,
+          currentUser.id,
+          currentUser.name || 'Unknown',
+          [change],
+        );
+      } else if (change.field === 'assignedUserId') {
+        // Resolve old assignee name
+        const oldAssignee = change.oldValue
+          ? await this.prisma.user.findUnique({ where: { id: change.oldValue as string }, select: { name: true } })
+          : null;
+        const oldName = oldAssignee?.name || 'Unassigned';
+        const newName = data.assignedUserName || 'Unknown';
+        await this.logActivity(
+          id,
+          'AssignmentChanged',
+          `Task assigned from ${oldName} to ${newName}`,
+          currentUser.id,
+          currentUser.name || 'Unknown',
+          [change],
+        );
+      } else {
+        await this.logActivity(
+          id,
+          'Updated',
+          `Task updated: ${change.field}`,
+          currentUser.id,
+          currentUser.name || 'Unknown',
+          [change],
+        );
+      }
     }
 
     this.events.emit('task:updated', { taskId: id, task });
@@ -292,7 +383,7 @@ export class TaskService extends BaseQueryService {
     const note = dto.notes?.trim();
     await this.logActivity(
       id,
-      'Completed',
+      'TaskCompleted',
       note ? `Task completed. Note: ${note}` : 'Task completed',
       currentUser.id,
       currentUser.name || 'Unknown',
@@ -476,7 +567,7 @@ export class TaskService extends BaseQueryService {
       this.client.count({
         where: { ...baseWhere, status: 'Completed', completedAt: { gte: todayStart, lte: todayEnd } },
       }),
-      this.client.$queryRawUnsafe(`
+      this.prisma.$queryRawUnsafe(`
         SELECT COUNT(*)::int as count
         FROM "Task"
         WHERE "isDeleted" = false
@@ -563,7 +654,7 @@ export class TaskService extends BaseQueryService {
         this.client.count({
           where: { isDeleted: false, status: 'Completed' },
         }),
-        this.client.$queryRawUnsafe(`
+        this.prisma.$queryRawUnsafe(`
           SELECT COUNT(*)::int as count
           FROM "Task"
           WHERE "isDeleted" = false
