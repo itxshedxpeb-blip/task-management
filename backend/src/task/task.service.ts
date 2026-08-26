@@ -86,6 +86,7 @@ export class TaskService extends BaseQueryService {
     result.rows = result.rows.map((task: any) => this.enrichTaskWithFollowUp(task));
     
     // If dateFrom/dateTo are specified, filter by both dueDate and follow-up dates client-side
+    // This is used by Calendar/Today pages to show tasks for specific dates
     if (dateFrom || dateTo) {
       result.rows = result.rows.filter((task: any) => {
         // Include if dueDate matches (use local date comparison)
@@ -103,7 +104,7 @@ export class TaskService extends BaseQueryService {
           if (dateTo && followUpDate > dateTo) return false;
           return true;
         }
-        // No date - exclude
+        // No date - exclude (for Calendar/Today pages)
         return false;
       });
     }
