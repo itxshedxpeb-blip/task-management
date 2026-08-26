@@ -57,14 +57,32 @@ export class TaskService extends BaseQueryService {
   }
 
   async findAll(query: GetTasksDto, currentUser?: CurrentUser) {
-    const { dueDateFrom, dueDateTo, ...restQuery } = query;
+    const { dueDateFrom, dueDateTo, dateFrom, dateTo, ...restQuery } = query;
 
     const extraWhere: WhereClause = {};
+    
+    // Filter by due date if specified
     if (dueDateFrom || dueDateTo) {
       extraWhere.dueDate = {};
       if (dueDateFrom) extraWhere.dueDate.gte = new Date(dueDateFrom);
       if (dueDateTo) {
         const toDate = new Date(dueDateTo);
+        toDate.setHours(23, 59, 59, 999);
+        extraWhere.dueDate.lte = toDate;
+      }
+    }
+
+    // Filter by general date range (includes both dueDate and follow-up dates)
+    // This is used by Calendar/Today pages
+    if (dateFrom || dateTo) {
+      // For now, we'll filter client-side for follow-up dates since they're in activities
+      // We'll still apply dueDate filter here
+      if (!extraWhere.dueDate) {
+        extraWhere.dueDate = {};
+      }
+      if (dateFrom) extraWhere.dueDate.gte = new Date(dateFrom);
+      if (dateTo) {
+        const toDate = new Date(dateTo);
         toDate.setHours(23, 59, 59, 999);
         extraWhere.dueDate.lte = toDate;
       }
@@ -79,6 +97,30 @@ export class TaskService extends BaseQueryService {
     // Enrich each task with next follow-up info
     result.rows = result.rows.map((task: any) => this.enrichTaskWithFollowUp(task));
     
+    // If dateFrom/dateTo are specified, also filter by follow-up dates client-side
+    // This is a temporary solution until we add proper Prisma filtering for activities
+    if (dateFrom || dateTo) {
+      result.rows = result.rows.filter((task: any) => {
+        // Include if dueDate matches (use local date comparison)
+        if (task.dueDate) {
+          const taskDate = new Date(task.dueDate);
+          const taskDateStr = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}-${String(taskDate.getDate()).padStart(2, '0')}`;
+          if (dateFrom && taskDateStr < dateFrom) return false;
+          if (dateTo && taskDateStr > dateTo) return false;
+          return true;
+        }
+        // Include if follow-up date matches
+        if (task.nextFollowUpDate) {
+          const followUpDate = task.nextFollowUpDate; // Already in YYYY-MM-DD format
+          if (dateFrom && followUpDate < dateFrom) return false;
+          if (dateTo && followUpDate > dateTo) return false;
+          return true;
+        }
+        // No date - exclude
+        return false;
+      });
+    }
+    
     return result;
   }
 
@@ -92,17 +134,16 @@ export class TaskService extends BaseQueryService {
 
   /**
    * Compute next follow-up info from the task's activities.
+   * Returns the most recent follow-up regardless of date for calendar/today display.
    */
   private enrichTaskWithFollowUp(task: any) {
     if (!task.activities || task.activities.length === 0) {
       return task;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Find activities with upcoming follow-ups
+    // Find all activities with follow-ups (not just future ones)
     const followUps = task.activities
-      .filter((a: any) => a.nextFollowUpDate && a.nextFollowUpDate >= today)
+      .filter((a: any) => a.nextFollowUpDate)
       .sort((a: any, b: any) => a.nextFollowUpDate.localeCompare(b.nextFollowUpDate));
 
     if (followUps.length > 0) {

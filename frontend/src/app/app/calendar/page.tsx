@@ -97,13 +97,22 @@ function TaskCard({ task }: { task: Task }) {
 }
 
 export default function CalendarPage() {
-  const today = dayjs();
+  const today = dayjs().tz('Asia/Kolkata');
   const [currentMonth, setCurrentMonth] = useState(today.month());
   const [currentYear, setCurrentYear] = useState(today.year());
   const [selectedDate, setSelectedDate] = useState<string>(today.format('YYYY-MM-DD'));
 
-  // Fetch all tasks (no date filter - we'll filter client-side for the month)
-  const { data, isLoading, error, refetch } = useTasks({ pageSize: 500, showAll: true });
+  // Calculate month range for fetching
+  const monthStart = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
+  const monthEnd = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
+
+  // Fetch tasks for the entire month to show indicators
+  const { data, isLoading, error, refetch } = useTasks({ 
+    pageSize: 500, 
+    dateFrom: monthStart,
+    dateTo: monthEnd,
+    showAll: true 
+  });
 
   const tasks = data?.rows || [];
 
@@ -184,7 +193,7 @@ export default function CalendarPage() {
     }
 
     return days;
-  }, [currentMonth, currentYear, selectedDate, today]);
+  }, [currentMonth, currentYear, selectedDate, today, monthStart, monthEnd]);
 
   // Get tasks/follow-ups for selected date
   const selectedDateData = dateMap[selectedDate] || { tasks: [], followUps: [] };

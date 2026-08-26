@@ -10,8 +10,8 @@ dayjs.extend(timezone);
 dayjs.extend(relativeTime);
 dayjs.extend(isBetween);
 
-// Set default timezone (can be configured based on application needs)
-const DEFAULT_TIMEZONE = 'UTC';
+// Set default timezone to IST (Asia/Kolkata) for India users
+const DEFAULT_TIMEZONE = 'Asia/Kolkata';
 
 /**
  * Format a date to DD MMM YYYY format (e.g., 27 Jul 2026)
@@ -146,11 +146,11 @@ export function getCurrentDateISO(): string {
 }
 
 /**
- * Get the current date in input format (YYYY-MM-DD)
- * @returns Current date as YYYY-MM-DD string
+ * Get the current date in input format (YYYY-MM-DD) using local timezone
+ * @returns Current date as YYYY-MM-DD string in local timezone
  */
 export function getCurrentInputDate(): string {
-  return dayjs().format('YYYY-MM-DD');
+  return dayjs().tz(DEFAULT_TIMEZONE).format('YYYY-MM-DD');
 }
 
 // Export dayjs for advanced usage if needed

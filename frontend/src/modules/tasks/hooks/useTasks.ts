@@ -76,8 +76,8 @@ export function useTasks(params?: {
       if (params?.dateFrom) query.dateFrom = params.dateFrom;
       if (params?.dateTo) query.dateTo = params.dateTo;
       if (!params?.showAll && !params?.dateFrom && !params?.dateTo) {
-        query.dateFrom = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
-        query.dateTo = dayjs().format('YYYY-MM-DD');
+        query.dateFrom = dayjs().tz('Asia/Kolkata').subtract(7, 'day').format('YYYY-MM-DD');
+        query.dateTo = dayjs().tz('Asia/Kolkata').format('YYYY-MM-DD');
       }
       
       const res = await api.get<BackendResponse<PaginatedResponse<Task>>>('/tasks', { params: query });

@@ -145,12 +145,18 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 
 export default function TodayPage() {
   const [createOpen, setCreateOpen] = useState(false);
-  const today = dayjs();
-  const { data, isLoading, error, refetch } = useTasks({ pageSize: 500, showAll: true });
+  const today = dayjs().tz('Asia/Kolkata');
+  const todayKey = today.format('YYYY-MM-DD');
+
+  // Fetch tasks for today using backend date filtering
+  const { data, isLoading, error, refetch } = useTasks({ 
+    pageSize: 500, 
+    dateFrom: todayKey,
+    dateTo: todayKey,
+    showAll: true 
+  });
 
   const tasks = data?.rows || [];
-
-  const todayKey = `${today.year()}-${String(today.month() + 1).padStart(2, '0')}-${String(today.date()).padStart(2, '0')}`;
 
   /** Returns the effective date string (YYYY-MM-DD) for a task, preferring nextFollowUpDate over dueDate */
   const getEffectiveDate = (t: Task): string | null => {
@@ -173,7 +179,16 @@ export default function TodayPage() {
     return effective === todayKey;
   });
 
-  const overdueTasks = tasks.filter((t) => {
+  // Fetch overdue tasks separately (tasks with effective date before today)
+  const { data: overdueData } = useTasks({ 
+    pageSize: 500, 
+    dateFrom: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
+    dateTo: dayjs().subtract(1, 'day').format('YYYY-MM-DD'),
+    showAll: true 
+  });
+
+  const allTasks = overdueData?.rows || [];
+  const overdueTasks = allTasks.filter((t) => {
     const effective = getEffectiveDate(t);
     if (!effective) return false;
     return dayjs(effective).isBefore(today, 'day') && t.status !== 'Completed';
