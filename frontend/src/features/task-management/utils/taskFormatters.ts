@@ -109,12 +109,11 @@ export function getTaskAge(createdAt?: Date | string | null): number {
   return Math.abs(startOfDay(dayjs()).diff(startOfDay(created), 'day'));
 }
 
-/** Human-readable task age (e.g. "Created 5 days ago", "Created today"). */
+/** Human-readable task age with actual date (e.g. "Created 26 Aug 2026"). */
 export function formatTaskAge(createdAt?: Date | string | null): string {
-  const days = getTaskAge(createdAt);
-  if (days === 0) return 'Created today';
-  if (days === 1) return 'Created yesterday';
-  return `Created ${days} days ago`;
+  const date = toDate(createdAt);
+  if (!date) return 'No date';
+  return `Created ${formatDate(createdAt)}`;
 }
 
 /** Days remaining until due date. Negative means overdue. Returns null if no dueDate. */

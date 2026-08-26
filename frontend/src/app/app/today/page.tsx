@@ -158,25 +158,20 @@ export default function TodayPage() {
 
   const tasks = data?.rows || [];
 
-  /** Returns the effective date string (YYYY-MM-DD) for a task, preferring nextFollowUpDate over dueDate */
-  const getEffectiveDate = (t: Task): string | null => {
-    // Prefer nextFollowUpDate (from activity follow-ups) if set
-    if (t.nextFollowUpDate) {
-      const d = dayjs(t.nextFollowUpDate);
-      if (d.isValid()) return d.format('YYYY-MM-DD');
-    }
-    // Fall back to dueDate
-    if (t.dueDate) {
-      const d = dayjs(t.dueDate);
-      if (d.isValid()) return d.format('YYYY-MM-DD');
-    }
-    return null;
-  };
+  // Separate tasks into categories
+  const dueToday = tasks.filter((t) => {
+    if (!t.dueDate) return false;
+    return dayjs(t.dueDate).format('YYYY-MM-DD') === todayKey;
+  });
 
-  const todayTasks = tasks.filter((t) => {
-    const effective = getEffectiveDate(t);
-    if (!effective) return false;
-    return effective === todayKey;
+  const followUpsToday = tasks.filter((t) => {
+    if (!t.nextFollowUpDate) return false;
+    return t.nextFollowUpDate === todayKey;
+  });
+
+  const createdToday = tasks.filter((t) => {
+    if (!t.createdAt) return false;
+    return dayjs(t.createdAt).format('YYYY-MM-DD') === todayKey;
   });
 
   // Fetch overdue tasks separately (tasks with effective date before today)
@@ -189,9 +184,15 @@ export default function TodayPage() {
 
   const allTasks = overdueData?.rows || [];
   const overdueTasks = allTasks.filter((t) => {
-    const effective = getEffectiveDate(t);
-    if (!effective) return false;
-    return dayjs(effective).isBefore(today, 'day') && t.status !== 'Completed';
+    // Check if due date is before today
+    if (t.dueDate && dayjs(t.dueDate).isBefore(today, 'day') && t.status !== 'Completed') {
+      return true;
+    }
+    // Check if follow-up date is before today
+    if (t.nextFollowUpDate && dayjs(t.nextFollowUpDate).isBefore(todayKey)) {
+      return true;
+    }
+    return false;
   });
 
   if (error) {
@@ -214,7 +215,7 @@ export default function TodayPage() {
           {today.format('dddd, MMMM D')}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {todayTasks.length} task{todayTasks.length !== 1 ? 's' : ''} due today
+          {dueToday.length} due, {followUpsToday.length} follow-ups, {createdToday.length} created today
         </p>
       </div>
 
@@ -241,19 +242,48 @@ export default function TodayPage() {
               </div>
             )}
 
-            {/* Today's Tasks */}
-            <div>
-              <h3 className="text-base font-semibold text-foreground mb-3">Today</h3>
-              {todayTasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No tasks due today.</p>
-              ) : (
+            {/* Due Today */}
+            {dueToday.length > 0 && (
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-3">Due Today</h3>
                 <div className="space-y-3">
-                  {todayTasks.map((task) => (
+                  {dueToday.map((task) => (
                     <TaskCard key={task.id} task={task} />
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Follow-ups Today */}
+            {followUpsToday.length > 0 && (
+              <div>
+                <h3 className="text-base font-semibold text-violet-600 mb-3">Follow-ups Today</h3>
+                <div className="space-y-3">
+                  {followUpsToday.map((task) => (
+                    <TaskCard key={task.id} task={task} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Created Today */}
+            {createdToday.length > 0 && (
+              <div>
+                <h3 className="text-base font-semibold text-blue-600 mb-3">Created Today</h3>
+                <div className="space-y-3">
+                  {createdToday.map((task) => (
+                    <TaskCard key={task.id} task={task} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No tasks */}
+            {dueToday.length === 0 && followUpsToday.length === 0 && createdToday.length === 0 && overdueTasks.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">No tasks for today.</p>
+              </div>
+            )}
           </>
         )}
       </div>

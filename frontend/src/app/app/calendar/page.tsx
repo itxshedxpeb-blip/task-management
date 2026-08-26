@@ -116,25 +116,35 @@ export default function CalendarPage() {
 
   const tasks = data?.rows || [];
 
-  // Build date map: tasks and follow-ups per date
+  // Build date map: tasks per date based on createdAt, dueDate, and nextFollowUpDate
   const dateMap = useMemo(() => {
-    const map: Record<string, { tasks: Task[]; followUps: Task[] }> = {};
+    const map: Record<string, Task[]> = {};
 
     for (const task of tasks) {
-      // Tasks with dueDate
-      if (task.dueDate) {
-        const key = dayjs(task.dueDate).format('YYYY-MM-DD');
-        if (!map[key]) map[key] = { tasks: [], followUps: [] };
-        map[key].tasks.push(task);
+      // Add to createdAt date
+      if (task.createdAt) {
+        const key = dayjs(task.createdAt).format('YYYY-MM-DD');
+        if (!map[key]) map[key] = [];
+        if (!map[key].find(t => t.id === task.id)) {
+          map[key].push(task);
+        }
       }
 
-      // Tasks with nextFollowUpDate
+      // Add to dueDate date
+      if (task.dueDate) {
+        const key = dayjs(task.dueDate).format('YYYY-MM-DD');
+        if (!map[key]) map[key] = [];
+        if (!map[key].find(t => t.id === task.id)) {
+          map[key].push(task);
+        }
+      }
+
+      // Add to nextFollowUpDate date
       if (task.nextFollowUpDate) {
         const key = dayjs(task.nextFollowUpDate).format('YYYY-MM-DD');
-        if (!map[key]) map[key] = { tasks: [], followUps: [] };
-        // Only add if not already added as a due-date task for this date
-        if (!map[key].tasks.find(t => t.id === task.id)) {
-          map[key].followUps.push(task);
+        if (!map[key]) map[key] = [];
+        if (!map[key].find(t => t.id === task.id)) {
+          map[key].push(task);
         }
       }
     }
@@ -195,8 +205,8 @@ export default function CalendarPage() {
     return days;
   }, [currentMonth, currentYear, selectedDate, today, monthStart, monthEnd]);
 
-  // Get tasks/follow-ups for selected date
-  const selectedDateData = dateMap[selectedDate] || { tasks: [], followUps: [] };
+  // Get tasks for selected date
+  const selectedDateData = dateMap[selectedDate] || [];
 
   const prevMonth = () => {
     if (currentMonth === 0) {
@@ -281,10 +291,8 @@ export default function CalendarPage() {
               {/* Day cells */}
               <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((dayInfo) => {
-                  const dayData = dateMap[dayInfo.date];
-                  const hasTasks = dayData && dayData.tasks.length > 0;
-                  const hasFollowUps = dayData && dayData.followUps.length > 0;
-                  const hasActivity = hasTasks || hasFollowUps;
+                  const dayTasks = dateMap[dayInfo.date] || [];
+                  const hasActivity = dayTasks.length > 0;
 
                   return (
                     <button
@@ -311,14 +319,7 @@ export default function CalendarPage() {
 
                       {/* Indicators */}
                       {hasActivity && (
-                        <div className="flex gap-0.5 mt-0.5">
-                          {hasTasks && (
-                            <div className="h-1 w-1 rounded-full bg-primary" />
-                          )}
-                          {hasFollowUps && (
-                            <div className="h-1 w-1 rounded-full bg-violet-500" />
-                          )}
-                        </div>
+                        <div className="h-1 w-1 rounded-full bg-primary mt-0.5" />
                       )}
                     </button>
                   );
@@ -335,33 +336,13 @@ export default function CalendarPage() {
                 )}
               </h3>
 
-              {selectedDateData.tasks.length === 0 && selectedDateData.followUps.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No tasks or follow-ups for this date.</p>
+              {selectedDateData.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No tasks for this date.</p>
               ) : (
-                <div className="space-y-3">
-                  {/* Tasks due on this date */}
-                  {selectedDateData.tasks.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Tasks</p>
-                      <div className="space-y-2">
-                        {selectedDateData.tasks.map((task) => (
-                          <TaskCard key={task.id} task={task} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Follow-ups on this date */}
-                  {selectedDateData.followUps.length > 0 && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Follow-ups</p>
-                      <div className="space-y-2">
-                        {selectedDateData.followUps.map((task) => (
-                          <TaskCard key={task.id} task={task} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-2">
+                  {selectedDateData.map((task) => (
+                    <TaskCard key={task.id} task={task} />
+                  ))}
                 </div>
               )}
             </div>

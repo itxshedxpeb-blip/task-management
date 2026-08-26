@@ -85,10 +85,18 @@ export class TaskService extends BaseQueryService {
     // Enrich each task with next follow-up info
     result.rows = result.rows.map((task: any) => this.enrichTaskWithFollowUp(task));
     
-    // If dateFrom/dateTo are specified, filter by both dueDate and follow-up dates client-side
+    // If dateFrom/dateTo are specified, filter by createdAt, dueDate, and follow-up dates client-side
     // This is used by Calendar/Today pages to show tasks for specific dates
     if (dateFrom || dateTo) {
       result.rows = result.rows.filter((task: any) => {
+        // Include if createdAt matches (use local date comparison)
+        if (task.createdAt) {
+          const createdDate = new Date(task.createdAt);
+          const createdDateStr = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}-${String(createdDate.getDate()).padStart(2, '0')}`;
+          if (dateFrom && createdDateStr < dateFrom) return false;
+          if (dateTo && createdDateStr > dateTo) return false;
+          return true;
+        }
         // Include if dueDate matches (use local date comparison)
         if (task.dueDate) {
           const taskDate = new Date(task.dueDate);
