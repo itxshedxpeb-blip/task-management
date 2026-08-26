@@ -158,10 +158,10 @@ export default function TodayPage() {
 
   const tasks = data?.rows || [];
 
-  // Separate tasks into categories
+  // Separate tasks into categories (all using IST timezone)
   const dueToday = tasks.filter((t) => {
     if (!t.dueDate) return false;
-    return dayjs(t.dueDate).format('YYYY-MM-DD') === todayKey;
+    return dayjs(t.dueDate).tz('Asia/Kolkata').format('YYYY-MM-DD') === todayKey;
   });
 
   const followUpsToday = tasks.filter((t) => {
@@ -171,14 +171,14 @@ export default function TodayPage() {
 
   const createdToday = tasks.filter((t) => {
     if (!t.createdAt) return false;
-    return dayjs(t.createdAt).format('YYYY-MM-DD') === todayKey;
+    return dayjs(t.createdAt).tz('Asia/Kolkata').format('YYYY-MM-DD') === todayKey;
   });
 
   // Fetch overdue tasks separately (tasks with effective date before today)
   const { data: overdueData } = useTasks({ 
     pageSize: 500, 
-    dateFrom: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
-    dateTo: dayjs().subtract(1, 'day').format('YYYY-MM-DD'),
+    dateFrom: dayjs().tz('Asia/Kolkata').subtract(30, 'day').format('YYYY-MM-DD'),
+    dateTo: dayjs().tz('Asia/Kolkata').subtract(1, 'day').format('YYYY-MM-DD'),
     showAll: true 
   });
 

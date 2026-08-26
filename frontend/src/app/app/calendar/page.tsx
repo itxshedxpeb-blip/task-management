@@ -117,31 +117,32 @@ export default function CalendarPage() {
   const tasks = data?.rows || [];
 
   // Build date map: tasks per date based on createdAt, dueDate, and nextFollowUpDate
+  // All dates converted to IST timezone for consistent display
   const dateMap = useMemo(() => {
     const map: Record<string, Task[]> = {};
 
     for (const task of tasks) {
-      // Add to createdAt date
+      // Add to createdAt date (IST)
       if (task.createdAt) {
-        const key = dayjs(task.createdAt).format('YYYY-MM-DD');
+        const key = dayjs(task.createdAt).tz('Asia/Kolkata').format('YYYY-MM-DD');
         if (!map[key]) map[key] = [];
         if (!map[key].find(t => t.id === task.id)) {
           map[key].push(task);
         }
       }
 
-      // Add to dueDate date
+      // Add to dueDate date (IST)
       if (task.dueDate) {
-        const key = dayjs(task.dueDate).format('YYYY-MM-DD');
+        const key = dayjs(task.dueDate).tz('Asia/Kolkata').format('YYYY-MM-DD');
         if (!map[key]) map[key] = [];
         if (!map[key].find(t => t.id === task.id)) {
           map[key].push(task);
         }
       }
 
-      // Add to nextFollowUpDate date
+      // Add to nextFollowUpDate date (already in YYYY-MM-DD format from activities)
       if (task.nextFollowUpDate) {
-        const key = dayjs(task.nextFollowUpDate).format('YYYY-MM-DD');
+        const key = task.nextFollowUpDate;
         if (!map[key]) map[key] = [];
         if (!map[key].find(t => t.id === task.id)) {
           map[key].push(task);

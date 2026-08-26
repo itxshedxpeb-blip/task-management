@@ -87,27 +87,35 @@ export class TaskService extends BaseQueryService {
     
     // If dateFrom/dateTo are specified, filter by createdAt, dueDate, and follow-up dates client-side
     // This is used by Calendar/Today pages to show tasks for specific dates
+    // All date comparisons use IST timezone (Asia/Kolkata)
     if (dateFrom || dateTo) {
       result.rows = result.rows.filter((task: any) => {
-        // Include if createdAt matches (use local date comparison)
+        // Helper to get IST date string from a Date object
+        const getISTDateStr = (date: Date | string): string => {
+          const d = new Date(date);
+          // Convert to IST by adding 5.5 hours offset
+          const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in ms
+          const istDate = new Date(d.getTime() + istOffset);
+          return `${istDate.getFullYear()}-${String(istDate.getMonth() + 1).padStart(2, '0')}-${String(istDate.getDate()).padStart(2, '0')}`;
+        };
+
+        // Include if createdAt matches (use IST date comparison)
         if (task.createdAt) {
-          const createdDate = new Date(task.createdAt);
-          const createdDateStr = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}-${String(createdDate.getDate()).padStart(2, '0')}`;
+          const createdDateStr = getISTDateStr(task.createdAt);
           if (dateFrom && createdDateStr < dateFrom) return false;
           if (dateTo && createdDateStr > dateTo) return false;
           return true;
         }
-        // Include if dueDate matches (use local date comparison)
+        // Include if dueDate matches (use IST date comparison)
         if (task.dueDate) {
-          const taskDate = new Date(task.dueDate);
-          const taskDateStr = `${taskDate.getFullYear()}-${String(taskDate.getMonth() + 1).padStart(2, '0')}-${String(taskDate.getDate()).padStart(2, '0')}`;
+          const taskDateStr = getISTDateStr(task.dueDate);
           if (dateFrom && taskDateStr < dateFrom) return false;
           if (dateTo && taskDateStr > dateTo) return false;
           return true;
         }
-        // Include if follow-up date matches
+        // Include if follow-up date matches (already in YYYY-MM-DD format from activities)
         if (task.nextFollowUpDate) {
-          const followUpDate = task.nextFollowUpDate; // Already in YYYY-MM-DD format
+          const followUpDate = task.nextFollowUpDate;
           if (dateFrom && followUpDate < dateFrom) return false;
           if (dateTo && followUpDate > dateTo) return false;
           return true;
