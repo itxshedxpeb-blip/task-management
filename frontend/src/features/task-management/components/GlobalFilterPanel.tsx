@@ -22,6 +22,7 @@ const STATUSES: (TaskStatus | 'all')[] = ['all', 'Todo', 'InProgress', 'Complete
 const PRIORITIES: (TaskPriority | 'all')[] = ['all', 'Low', 'Medium', 'High', 'Urgent'];
 
 const MOBILE_DATE_PRESETS = [
+  { label: 'All Time', value: 'all' },
   { label: 'Today', value: 'today' },
   { label: 'Yesterday', value: 'yesterday' },
   { label: 'This Week', value: 'this-week' },
@@ -62,6 +63,7 @@ function getDateRange(preset: string): { from: string; to: string } | null {
   const fmt = (d: Date) => d.toISOString().split('T')[0];
 
   switch (preset) {
+    case 'all': return null;
     case 'today': return { from: fmt(startOfDay(now)), to: fmt(startOfDay(now)) };
     case 'yesterday': { const d = new Date(now); d.setDate(d.getDate() - 1); return { from: fmt(startOfDay(d)), to: fmt(startOfDay(d)) }; }
     case 'this-week': {
@@ -88,6 +90,7 @@ export function GlobalFilterPanel({ isOpen, onClose, onApply, onClear, filters: 
       if (key === 'datePreset' && value !== 'custom') {
         const range = getDateRange(value as string);
         if (range) { next.dateFrom = range.from; next.dateTo = range.to; }
+        else { next.dateFrom = undefined; next.dateTo = undefined; }
         setShowCustomDate(false);
       }
       if (key === 'datePreset' && value === 'custom') {
@@ -99,7 +102,7 @@ export function GlobalFilterPanel({ isOpen, onClose, onApply, onClear, filters: 
 
   const activeCount = useMemo(() => {
     return Object.entries(filters).filter(([k, v]) => {
-      if (k === 'datePreset' && v === 'today') return false;
+      if (k === 'datePreset' && (v === 'today' || v === 'all')) return false;
       if (v === undefined || v === null || v === '' || v === 'all') return false;
       if (Array.isArray(v)) return v.length > 0;
       return true;
@@ -108,7 +111,7 @@ export function GlobalFilterPanel({ isOpen, onClose, onApply, onClear, filters: 
 
   const handleApply = () => { onApply(filters); onClose(); };
   const handleReset = () => { 
-    setFilters({ datePreset: 'today' }); 
+    setFilters({ datePreset: 'all' }); 
     setShowCustomDate(false);
     onClear(); 
   };

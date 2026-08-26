@@ -164,7 +164,7 @@ export default function TasksPage() {
   const [deleteTaskTitle, setDeleteTaskTitle] = useState('');
   const [statusDropdownTaskId, setStatusDropdownTaskId] = useState<string | null>(null);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  const [globalFilters, setGlobalFilters] = useState<GlobalFilters>({ datePreset: 'last-7-days' });
+  const [globalFilters, setGlobalFilters] = useState<GlobalFilters>({ datePreset: 'all' });
   const moveTask = useMoveTask();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pageSize = 15;
@@ -192,7 +192,7 @@ export default function TasksPage() {
     sortOrder: globalFilters.sortOrder,
     dateFrom: globalFilters.dateFrom,
     dateTo: globalFilters.dateTo,
-    showAll: !!globalFilters.dateFrom || !!globalFilters.dateTo,
+    showAll: true,
   });
 
   const allTasks = useMemo(() => data?.rows || [], [data?.rows]);
@@ -340,13 +340,13 @@ export default function TasksPage() {
             Filters
             {Object.keys(globalFilters).filter(k => {
               const v = globalFilters[k as keyof GlobalFilters];
-              if (k === 'datePreset' && v === 'last-7-days') return false;
+              if (k === 'datePreset' && (v === 'all' || v === 'last-7-days')) return false;
               return v !== undefined && v !== null && v !== '';
             }).length > 0 && (
               <Badge variant="secondary" className="ml-1.5 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
                 {Object.keys(globalFilters).filter(k => {
                   const v = globalFilters[k as keyof GlobalFilters];
-                  if (k === 'datePreset' && v === 'last-7-days') return false;
+                  if (k === 'datePreset' && (v === 'all' || v === 'last-7-days')) return false;
                   return v !== undefined && v !== null && v !== '';
                 }).length}
               </Badge>
@@ -359,7 +359,7 @@ export default function TasksPage() {
         isOpen={filterPanelOpen}
         onClose={() => setFilterPanelOpen(false)}
         onApply={(f) => { setGlobalFilters(f); setPage(1); }}
-        onClear={() => { setGlobalFilters({ datePreset: 'last-7-days' }); setPage(1); }}
+        onClear={() => { setGlobalFilters({ datePreset: 'all' }); setPage(1); }}
         filters={globalFilters}
       />
 
