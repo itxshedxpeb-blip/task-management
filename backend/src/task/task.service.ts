@@ -61,7 +61,7 @@ export class TaskService extends BaseQueryService {
 
     const extraWhere: WhereClause = {};
     
-    // Filter by due date if specified
+    // Filter by due date if specified (explicit dueDate filter)
     if (dueDateFrom || dueDateTo) {
       extraWhere.dueDate = {};
       if (dueDateFrom) extraWhere.dueDate.gte = new Date(dueDateFrom);
@@ -72,21 +72,9 @@ export class TaskService extends BaseQueryService {
       }
     }
 
-    // Filter by general date range (includes both dueDate and follow-up dates)
-    // This is used by Calendar/Today pages
-    if (dateFrom || dateTo) {
-      // For now, we'll filter client-side for follow-up dates since they're in activities
-      // We'll still apply dueDate filter here
-      if (!extraWhere.dueDate) {
-        extraWhere.dueDate = {};
-      }
-      if (dateFrom) extraWhere.dueDate.gte = new Date(dateFrom);
-      if (dateTo) {
-        const toDate = new Date(dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        extraWhere.dueDate.lte = toDate;
-      }
-    }
+    // NOTE: dateFrom/dateTo are NOT applied to Prisma query
+    // because they need to filter by both dueDate AND nextFollowUpDate
+    // which requires client-side filtering after enrichment
 
     if (currentUser && !this.canViewAll(currentUser)) {
       extraWhere.assignedUserId = currentUser.id;
@@ -97,8 +85,7 @@ export class TaskService extends BaseQueryService {
     // Enrich each task with next follow-up info
     result.rows = result.rows.map((task: any) => this.enrichTaskWithFollowUp(task));
     
-    // If dateFrom/dateTo are specified, also filter by follow-up dates client-side
-    // This is a temporary solution until we add proper Prisma filtering for activities
+    // If dateFrom/dateTo are specified, filter by both dueDate and follow-up dates client-side
     if (dateFrom || dateTo) {
       result.rows = result.rows.filter((task: any) => {
         // Include if dueDate matches (use local date comparison)
