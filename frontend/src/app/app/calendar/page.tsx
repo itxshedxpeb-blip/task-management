@@ -102,15 +102,13 @@ export default function CalendarPage() {
   const [currentYear, setCurrentYear] = useState(today.year());
   const [selectedDate, setSelectedDate] = useState<string>(today.format('YYYY-MM-DD'));
 
-  // Calculate month range for fetching
-  const monthStart = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
-  const monthEnd = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
+  // Calculate month range for filtering (in IST)
+  const monthStartIST = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
+  const monthEndIST = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
 
-  // Fetch tasks for the entire month to show indicators
+  // Fetch all tasks (no date filter - backend ignores dateFrom/dateTo)
   const { data, isLoading, error, refetch } = useTasks({ 
     pageSize: 500, 
-    dateFrom: monthStart,
-    dateTo: monthEnd,
     showAll: true 
   });
 
@@ -118,40 +116,49 @@ export default function CalendarPage() {
 
   // Build date map: tasks per date based on createdAt, dueDate, and nextFollowUpDate
   // All dates converted to IST timezone for consistent display
+  // Handle both string and Date object formats, skip empty objects
+  // Filter to only include tasks within the selected month range
   const dateMap = useMemo(() => {
     const map: Record<string, Task[]> = {};
 
     for (const task of tasks) {
-      // Add to createdAt date (IST)
-      if (task.createdAt) {
-        const key = dayjs(task.createdAt).tz('Asia/Kolkata').format('YYYY-MM-DD');
-        if (!map[key]) map[key] = [];
-        if (!map[key].find(t => t.id === task.id)) {
-          map[key].push(task);
+      // Add to createdAt date (IST) if within month range
+      if (task.createdAt && !(typeof task.createdAt === 'object' && Object.keys(task.createdAt).length === 0)) {
+        const key = dayjs(new Date(task.createdAt)).tz('Asia/Kolkata').format('YYYY-MM-DD');
+        if (key >= monthStartIST && key <= monthEndIST) {
+          if (!map[key]) map[key] = [];
+          if (!map[key].find(t => t.id === task.id)) {
+            map[key].push(task);
+          }
         }
       }
 
-      // Add to dueDate date (IST)
-      if (task.dueDate) {
-        const key = dayjs(task.dueDate).tz('Asia/Kolkata').format('YYYY-MM-DD');
-        if (!map[key]) map[key] = [];
-        if (!map[key].find(t => t.id === task.id)) {
-          map[key].push(task);
+      // Add to dueDate date (IST) if within month range
+      if (task.dueDate && !(typeof task.dueDate === 'object' && Object.keys(task.dueDate).length === 0)) {
+        const key = dayjs(new Date(task.dueDate)).tz('Asia/Kolkata').format('YYYY-MM-DD');
+        if (key >= monthStartIST && key <= monthEndIST) {
+          if (!map[key]) map[key] = [];
+          if (!map[key].find(t => t.id === task.id)) {
+            map[key].push(task);
+          }
         }
       }
 
-      // Add to nextFollowUpDate date (already in YYYY-MM-DD format from activities)
+      // Add to nextFollowUpDate date if within month range
+      // nextFollowUpDate is already in YYYY-MM-DD format from activities (assumed IST)
       if (task.nextFollowUpDate) {
         const key = task.nextFollowUpDate;
-        if (!map[key]) map[key] = [];
-        if (!map[key].find(t => t.id === task.id)) {
-          map[key].push(task);
+        if (key >= monthStartIST && key <= monthEndIST) {
+          if (!map[key]) map[key] = [];
+          if (!map[key].find(t => t.id === task.id)) {
+            map[key].push(task);
+          }
         }
       }
     }
 
     return map;
-  }, [tasks]);
+  }, [tasks, monthStartIST, monthEndIST]);
 
   // Get calendar days for the month
   const calendarDays = useMemo(() => {
@@ -204,7 +211,7 @@ export default function CalendarPage() {
     }
 
     return days;
-  }, [currentMonth, currentYear, selectedDate, today, monthStart, monthEnd]);
+  }, [currentMonth, currentYear, selectedDate, today, monthStartIST, monthEndIST]);
 
   // Get tasks for selected date
   const selectedDateData = dateMap[selectedDate] || [];

@@ -110,7 +110,11 @@ export function TaskCard({
           ) : (
             <span />
           )}
-          <DateDisplay date={task.dueDate} mode="due" completed={isCompleted} />
+          {task.dueDate && !(typeof task.dueDate === 'object' && Object.keys(task.dueDate).length === 0) ? (
+            <DateDisplay date={task.dueDate} mode="due" completed={isCompleted} />
+          ) : (
+            <DateDisplay date={task.createdAt} mode="absolute" />
+          )}
         </div>
 
         {showProgress && typeof task.progress === 'number' && task.progress > 0 && (

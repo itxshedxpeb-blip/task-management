@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   RefreshCw,
   AlertTriangle,
@@ -20,22 +20,42 @@ const STATUS_COLORS: Record<string, string> = {
   Todo: 'text-blue-400 bg-blue-500/10',
   InProgress: 'text-orange-400 bg-orange-500/10',
   Completed: 'text-emerald-400 bg-emerald-500/10',
+  CompletedLate: 'text-emerald-400 bg-emerald-500/10',
   OnHold: 'text-yellow-400 bg-yellow-500/10',
   Draft: 'text-gray-400 bg-gray-500/10',
 };
 
 export default function ReportsPage() {
-  const { data, isLoading, error, refetch } = useTasks({ pageSize: 500 });
+  const { data, isLoading, error, refetch } = useTasks({ pageSize: 500, showAll: true });
 
   const tasks = data?.rows || [];
+  const todayKey = dayjs().tz('Asia/Kolkata').format('YYYY-MM-DD');
+
+  // Auto-refresh when page gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      refetch();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refetch]);
 
   const stats = {
     total: tasks.length,
-    completed: tasks.filter((t) => t.status === 'Completed').length,
+    completed: tasks.filter((t) => t.status === 'Completed' || t.status === 'CompletedLate').length,
     inProgress: tasks.filter((t) => t.status === 'InProgress').length,
+    todo: tasks.filter((t) => t.status === 'Todo').length,
+    onHold: tasks.filter((t) => t.status === 'OnHold').length,
+    draft: tasks.filter((t) => t.status === 'Draft').length,
     overdue: tasks.filter((t) => {
-      if (!t.dueDate) return false;
-      return dayjs(t.dueDate).isBefore(dayjs(), 'day') && t.status !== 'Completed';
+      if (!t.dueDate || (typeof t.dueDate === 'object' && Object.keys(t.dueDate).length === 0)) return false;
+      const dueDateIST = dayjs(new Date(t.dueDate)).tz('Asia/Kolkata').format('YYYY-MM-DD');
+      return dueDateIST < todayKey && t.status !== 'Completed' && t.status !== 'CompletedLate';
+    }).length,
+    dueToday: tasks.filter((t) => {
+      if (!t.dueDate || (typeof t.dueDate === 'object' && Object.keys(t.dueDate).length === 0)) return false;
+      const dueDateIST = dayjs(new Date(t.dueDate)).tz('Asia/Kolkata').format('YYYY-MM-DD');
+      return dueDateIST === todayKey;
     }).length,
   };
 
@@ -57,8 +77,15 @@ export default function ReportsPage() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
-        <h2 className="text-lg font-semibold text-foreground">Reports</h2>
-        <p className="text-sm text-muted-foreground mt-1">Task performance overview</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Reports</h2>
+            <p className="text-sm text-muted-foreground mt-1">Task performance overview</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+          </Button>
+        </div>
       </div>
 
       {/* Content */}
@@ -129,6 +156,46 @@ export default function ReportsPage() {
                     <span className="text-xs text-muted-foreground">Overdue</span>
                   </div>
                   <span className="text-2xl font-bold text-destructive">{stats.overdue}</span>
+                </CardContent>
+              </Card>
+
+              <Card className="p-4 rounded-2xl border border-border">
+                <CardContent className="p-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                    <span className="text-xs text-muted-foreground">Todo</span>
+                  </div>
+                  <span className="text-2xl font-bold text-blue-400">{stats.todo}</span>
+                </CardContent>
+              </Card>
+
+              <Card className="p-4 rounded-2xl border border-border">
+                <CardContent className="p-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-yellow-400" />
+                    <span className="text-xs text-muted-foreground">On Hold</span>
+                  </div>
+                  <span className="text-2xl font-bold text-yellow-400">{stats.onHold}</span>
+                </CardContent>
+              </Card>
+
+              <Card className="p-4 rounded-2xl border border-border">
+                <CardContent className="p-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="h-4 w-4 text-gray-400" />
+                    <span className="text-xs text-muted-foreground">Draft</span>
+                  </div>
+                  <span className="text-2xl font-bold text-gray-400">{stats.draft}</span>
+                </CardContent>
+              </Card>
+
+              <Card className="p-4 rounded-2xl border border-border">
+                <CardContent className="p-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-purple-400" />
+                    <span className="text-xs text-muted-foreground">Due Today</span>
+                  </div>
+                  <span className="text-2xl font-bold text-purple-400">{stats.dueToday}</span>
                 </CardContent>
               </Card>
             </div>

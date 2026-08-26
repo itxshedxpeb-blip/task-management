@@ -53,6 +53,8 @@ export interface DueMeta {
 
 function toDate(value?: Date | string | null): dayjs.Dayjs | null {
   if (!value) return null;
+  // Handle empty objects (backend sometimes returns {} for dates)
+  if (typeof value === 'object' && Object.keys(value).length === 0) return null;
   const date = dayjs(value);
   return date.isValid() ? date : null;
 }

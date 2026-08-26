@@ -52,13 +52,13 @@ export default function ProfilePage() {
   // If stats error, show error message but still render the page
   if (statsError && !statsLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 pb-20">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Profile</h1>
             <p className="text-sm text-muted-foreground mt-1">View and manage your profile.</p>
           </div>
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
+          <Button variant="outline" onClick={() => setEditOpen(true)} className="w-full sm:w-auto">
             <Edit className="h-4 w-4 mr-2" /> Edit Profile
           </Button>
         </div>
@@ -77,46 +77,46 @@ export default function ProfilePage() {
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <span className="text-blue-500 text-xl font-bold">{initials}</span>
+            <div className="flex flex-col items-center sm:items-start sm:flex-row sm:gap-6 gap-4">
+              <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-500 text-2xl sm:text-xl font-bold">{initials}</span>
               </div>
-              <div>
+              <div className="text-center sm:text-left flex-1">
                 <h2 className="text-xl font-bold text-foreground">{user?.name || 'Employee'}</h2>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="text-[10px]">{user?.role}</Badge>
-                  {user?.isActive && <Badge variant="default" className="text-[10px]">Active</Badge>}
+                <p className="text-sm text-muted-foreground break-all">{user?.email}</p>
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">{user?.role}</Badge>
+                  {user?.isActive && <Badge variant="default" className="text-xs">Active</Badge>}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Mail className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground" />
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Email</p>
-                  <p className="text-sm text-foreground">{user?.email}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p className="text-sm text-foreground truncate">{user?.email}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Briefcase className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground" />
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Role</p>
-                  <p className="text-sm text-foreground">{user?.role?.replace('_', ' ')}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Role</p>
+                  <p className="text-sm text-foreground truncate">{user?.role?.replace('_', ' ')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <User className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground" />
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground">User Type</p>
-                  <p className="text-sm text-foreground">{user?.userType?.replace('_', ' ')}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">User Type</p>
+                  <p className="text-sm text-foreground truncate">{user?.userType?.replace('_', ' ')}</p>
                 </div>
               </div>
             </div>
@@ -124,7 +124,7 @@ export default function ProfilePage() {
         </Card>
 
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md w-[95%] mx-auto">
             <DialogHeader>
               <DialogTitle>Edit Profile</DialogTitle>
             </DialogHeader>
@@ -149,83 +149,83 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 pb-20">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Profile</h1>
           <p className="text-sm text-muted-foreground mt-1">View and manage your profile.</p>
         </div>
-        <Button variant="outline" onClick={() => setEditOpen(true)}>
+        <Button variant="outline" onClick={() => setEditOpen(true)} className="w-full sm:w-auto">
           <Edit className="h-4 w-4 mr-2" /> Edit Profile
         </Button>
       </div>
 
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <span className="text-blue-500 text-xl font-bold">{initials}</span>
+          <div className="flex flex-col items-center sm:items-start sm:flex-row sm:gap-6 gap-4">
+            <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-blue-500 text-2xl sm:text-xl font-bold">{initials}</span>
             </div>
-            <div>
+            <div className="text-center sm:text-left flex-1">
               <h2 className="text-xl font-bold text-foreground">{user?.name || 'Employee'}</h2>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-[10px]">{user?.role}</Badge>
-                {user?.isActive && <Badge variant="default" className="text-[10px]">Active</Badge>}
+              <p className="text-sm text-muted-foreground break-all">{user?.email}</p>
+              <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 flex-wrap">
+                <Badge variant="outline" className="text-xs">{user?.role}</Badge>
+                {user?.isActive && <Badge variant="default" className="text-xs">Active</Badge>}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+              <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Mail className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground" />
               </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground">Email</p>
-                <p className="text-sm text-foreground">{user?.email}</p>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Email</p>
+                <p className="text-sm text-foreground truncate">{user?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
+              <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Briefcase className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground" />
               </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground">Role</p>
-                <p className="text-sm text-foreground">{user?.role?.replace('_', ' ')}</p>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Role</p>
+                <p className="text-sm text-foreground truncate">{user?.role?.replace('_', ' ')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                <User className="h-4 w-4 text-muted-foreground" />
+              <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <User className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground" />
               </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground">User Type</p>
-                <p className="text-sm text-foreground">{user?.userType?.replace('_', ' ')}</p>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">User Type</p>
+                <p className="text-sm text-foreground truncate">{user?.userType?.replace('_', ' ')}</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {statsLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />
+            <div key={i} className="h-28 sm:h-24 bg-muted rounded-xl animate-pulse" />
           ))
         ) : (
           statCards.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.label}>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground uppercase">{stat.label}</p>
-                    <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center', stat.bg)}>
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase">{stat.label}</p>
+                    <div className={cn('h-8 w-8 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center', stat.bg)}>
                       <Icon className={cn('h-4 w-4', stat.color)} />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stat.value}</p>
                 </CardContent>
               </Card>
             );
@@ -234,7 +234,7 @@ export default function ProfilePage() {
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md w-[95%] mx-auto">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>

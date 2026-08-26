@@ -35,6 +35,13 @@ interface DateDisplayProps {
  * mismatches for relative and due-date labels.
  */
 export function DateDisplay({ date, mode = 'absolute', completed, className }: DateDisplayProps) {
+  // Handle empty objects (backend sometimes returns {} for dates)
+  const isValidDate = date && !(typeof date === 'object' && Object.keys(date).length === 0);
+  
+  if (!isValidDate) {
+    return <span className={cn('text-xs text-muted-foreground', className)}>—</span>;
+  }
+
   if (mode === 'due') {
     const meta = getDueMeta(date, { completed });
     return (

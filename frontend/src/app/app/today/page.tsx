@@ -148,20 +148,20 @@ export default function TodayPage() {
   const today = dayjs().tz('Asia/Kolkata');
   const todayKey = today.format('YYYY-MM-DD');
 
-  // Fetch tasks for today using backend date filtering
+  // Fetch all tasks (no date filter - backend ignores dateFrom/dateTo)
   const { data, isLoading, error, refetch } = useTasks({ 
     pageSize: 500, 
-    dateFrom: todayKey,
-    dateTo: todayKey,
     showAll: true 
   });
 
   const tasks = data?.rows || [];
 
   // Separate tasks into categories (all using IST timezone)
+  // Handle both string and Date object formats, skip empty objects
   const dueToday = tasks.filter((t) => {
-    if (!t.dueDate) return false;
-    return dayjs(t.dueDate).tz('Asia/Kolkata').format('YYYY-MM-DD') === todayKey;
+    if (!t.dueDate || (typeof t.dueDate === 'object' && Object.keys(t.dueDate).length === 0)) return false;
+    const dueDateIST = dayjs(new Date(t.dueDate)).tz('Asia/Kolkata').format('YYYY-MM-DD');
+    return dueDateIST === todayKey;
   });
 
   const followUpsToday = tasks.filter((t) => {
@@ -170,26 +170,23 @@ export default function TodayPage() {
   });
 
   const createdToday = tasks.filter((t) => {
-    if (!t.createdAt) return false;
-    return dayjs(t.createdAt).tz('Asia/Kolkata').format('YYYY-MM-DD') === todayKey;
+    if (!t.createdAt || (typeof t.createdAt === 'object' && Object.keys(t.createdAt).length === 0)) return false;
+    const createdDateIST = dayjs(new Date(t.createdAt)).tz('Asia/Kolkata').format('YYYY-MM-DD');
+    return createdDateIST === todayKey;
   });
 
-  // Fetch overdue tasks separately (tasks with effective date before today)
-  const { data: overdueData } = useTasks({ 
-    pageSize: 500, 
-    dateFrom: dayjs().tz('Asia/Kolkata').subtract(30, 'day').format('YYYY-MM-DD'),
-    dateTo: dayjs().tz('Asia/Kolkata').subtract(1, 'day').format('YYYY-MM-DD'),
-    showAll: true 
-  });
-
-  const allTasks = overdueData?.rows || [];
-  const overdueTasks = allTasks.filter((t) => {
-    // Check if due date is before today
-    if (t.dueDate && dayjs(t.dueDate).isBefore(today, 'day') && t.status !== 'Completed') {
-      return true;
+  // Calculate overdue tasks from the same data (client-side filtering)
+  const overdueTasks = tasks.filter((t) => {
+    // Check if due date is before today (IST)
+    if (t.dueDate) {
+      const dueDateIST = dayjs(new Date(t.dueDate)).tz('Asia/Kolkata').format('YYYY-MM-DD');
+      if (dueDateIST < todayKey && t.status !== 'Completed') {
+        return true;
+      }
     }
     // Check if follow-up date is before today
-    if (t.nextFollowUpDate && dayjs(t.nextFollowUpDate).isBefore(todayKey)) {
+    // nextFollowUpDate is already in YYYY-MM-DD format from activities (assumed IST)
+    if (t.nextFollowUpDate && t.nextFollowUpDate < todayKey) {
       return true;
     }
     return false;

@@ -21,6 +21,8 @@ export interface WhereClause {
 export function serializeDecimals(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === 'object' && typeof obj.toNumber === 'function') return obj.toNumber();
+  // Convert Date objects to ISO strings
+  if (obj instanceof Date) return obj.toISOString();
   if (Array.isArray(obj)) return obj.map(serializeDecimals);
   if (typeof obj === 'object') {
     const result: any = {};

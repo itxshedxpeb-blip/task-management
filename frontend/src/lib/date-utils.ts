@@ -20,9 +20,11 @@ const DEFAULT_TIMEZONE = 'Asia/Kolkata';
  */
 export function formatDate(date: string | Date | dayjs.Dayjs | null | undefined): string {
   if (!date) return '—';
-  const parsed = dayjs(date);
+  // Handle empty objects (backend sometimes returns {} for dates)
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return '—';
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return '—';
-  return parsed.format('DD MMM YYYY');
+  return parsed.tz(DEFAULT_TIMEZONE).format('DD MMM YYYY');
 }
 
 /**
@@ -32,9 +34,10 @@ export function formatDate(date: string | Date | dayjs.Dayjs | null | undefined)
  */
 export function formatDateTime(date: string | Date | dayjs.Dayjs | null | undefined): string {
   if (!date) return '—';
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return '—';
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return '—';
-  return parsed.format('DD MMM YYYY, hh:mm A');
+  return parsed.tz(DEFAULT_TIMEZONE).format('DD MMM YYYY, hh:mm A');
 }
 
 /**
@@ -44,9 +47,10 @@ export function formatDateTime(date: string | Date | dayjs.Dayjs | null | undefi
  */
 export function formatShortDate(date: string | Date | dayjs.Dayjs | null | undefined): string {
   if (!date) return '—';
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return '—';
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return '—';
-  return parsed.format('DD/MM/YYYY');
+  return parsed.tz(DEFAULT_TIMEZONE).format('DD/MM/YYYY');
 }
 
 /**
@@ -56,7 +60,8 @@ export function formatShortDate(date: string | Date | dayjs.Dayjs | null | undef
  */
 export function toISOString(date: string | Date | dayjs.Dayjs | null | undefined): string | undefined {
   if (!date) return undefined;
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return undefined;
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return undefined;
   return parsed.toISOString();
 }
@@ -68,9 +73,10 @@ export function toISOString(date: string | Date | dayjs.Dayjs | null | undefined
  */
 export function toInputDate(date: string | Date | dayjs.Dayjs | null | undefined): string {
   if (!date) return '';
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return '';
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return '';
-  return parsed.format('YYYY-MM-DD');
+  return parsed.tz(DEFAULT_TIMEZONE).format('YYYY-MM-DD');
 }
 
 /**
@@ -80,9 +86,10 @@ export function toInputDate(date: string | Date | dayjs.Dayjs | null | undefined
  */
 export function formatRelativeTime(date: string | Date | dayjs.Dayjs | null | undefined): string {
   if (!date) return '—';
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return '—';
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return '—';
-  return parsed.fromNow();
+  return parsed.tz(DEFAULT_TIMEZONE).fromNow();
 }
 
 /**
@@ -92,9 +99,10 @@ export function formatRelativeTime(date: string | Date | dayjs.Dayjs | null | un
  */
 export function isPast(date: string | Date | dayjs.Dayjs | null | undefined): boolean {
   if (!date) return false;
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return false;
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return false;
-  return parsed.isBefore(dayjs());
+  return parsed.tz(DEFAULT_TIMEZONE).isBefore(dayjs().tz(DEFAULT_TIMEZONE));
 }
 
 /**
@@ -104,9 +112,10 @@ export function isPast(date: string | Date | dayjs.Dayjs | null | undefined): bo
  */
 export function isFuture(date: string | Date | dayjs.Dayjs | null | undefined): boolean {
   if (!date) return false;
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return false;
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return false;
-  return parsed.isAfter(dayjs());
+  return parsed.tz(DEFAULT_TIMEZONE).isAfter(dayjs().tz(DEFAULT_TIMEZONE));
 }
 
 /**
@@ -116,9 +125,10 @@ export function isFuture(date: string | Date | dayjs.Dayjs | null | undefined): 
  */
 export function isToday(date: string | Date | dayjs.Dayjs | null | undefined): boolean {
   if (!date) return false;
-  const parsed = dayjs(date);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return false;
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return false;
-  return parsed.isSame(dayjs(), 'day');
+  return parsed.tz(DEFAULT_TIMEZONE).isSame(dayjs().tz(DEFAULT_TIMEZONE), 'day');
 }
 
 /**
@@ -132,9 +142,10 @@ export function formatDateInTimezone(
   timezone: string = DEFAULT_TIMEZONE
 ): string {
   if (!date) return '—';
-  const parsed = dayjs(date).tz(timezone);
+  if (typeof date === 'object' && !dayjs.isDayjs(date) && Object.keys(date).length === 0) return '—';
+  const parsed = dayjs.isDayjs(date) ? date : dayjs(new Date(date));
   if (!parsed.isValid()) return '—';
-  return parsed.format('DD MMM YYYY, hh:mm A');
+  return parsed.tz(timezone).format('DD MMM YYYY, hh:mm A');
 }
 
 /**
@@ -142,7 +153,7 @@ export function formatDateInTimezone(
  * @returns Current date as ISO string
  */
 export function getCurrentDateISO(): string {
-  return dayjs().toISOString();
+  return dayjs().tz(DEFAULT_TIMEZONE).toISOString();
 }
 
 /**
