@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import { Pool, PoolConfig } from 'pg';
 import { getPrismaConnectionUrl, sleep } from './database-bootstrap';
 
 @Injectable()
@@ -11,12 +11,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   constructor() {
     const dbUrl = getPrismaConnectionUrl();
-    const pool = new Pool({
+    
+    // Build pool configuration for Aiven PostgreSQL with self-signed certificate
+    // Use TLS encryption but accept self-signed certificates
+    const poolConfig: PoolConfig = {
       connectionString: dbUrl,
       max: 10,
       idleTimeoutMillis: 20_000,
       connectionTimeoutMillis: 10_000,
-    });
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    };
+
+    const pool = new Pool(poolConfig);
 
     super({
       adapter: new PrismaPg(pool),
@@ -24,7 +32,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     });
 
     this.pool = pool;
-    this.logger.log(`DATABASE_URL: ${dbUrl ? dbUrl.replace(/:[^:@]+@/, ':****@') : 'NOT SET'}`);
+    
+    // Log connection info without exposing credentials
+    const maskedUrl = dbUrl ? dbUrl.replace(/:[^:@]+@/, ':****@') : 'NOT SET';
+    this.logger.log(`DATABASE_URL: ${maskedUrl}`);
+    this.logger.log('SSL: Enabled (TLS encryption with self-signed certificate acceptance)');
   }
 
   async onModuleInit() {
