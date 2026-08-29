@@ -33,10 +33,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
     this.pool = pool;
     
-    // Log connection info without exposing credentials
-    const maskedUrl = dbUrl ? dbUrl.replace(/:[^:@]+@/, ':****@') : 'NOT SET';
-    this.logger.log(`DATABASE_URL: ${maskedUrl}`);
-    this.logger.log('SSL: Enabled (TLS encryption with self-signed certificate acceptance)');
+    // Safe diagnostic logging - no credentials exposed
+    const url = new URL(dbUrl);
+    this.logger.log(`PostgreSQL host: ${url.hostname}:${url.port}`);
+    this.logger.log(`PostgreSQL SSL config: enabled=true, rejectUnauthorized=false`);
   }
 
   async onModuleInit() {
@@ -50,6 +50,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         await this.$connect();
+        // Verify connection with a real query
+        await this.$queryRaw`SELECT 1`;
         this.logger.log('Database connected successfully');
         return;
       } catch (error) {

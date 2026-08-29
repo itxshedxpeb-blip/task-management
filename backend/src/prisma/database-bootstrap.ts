@@ -1,18 +1,21 @@
 export function getPrismaConnectionUrl(): string {
-  const url = (
+  const rawUrl =
     process.env.DIRECT_DATABASE_URL ||
-    process.env.DATABASE_URL?.replace(/[?&]pgbouncer=true/g, '') ||
     process.env.DATABASE_URL ||
-    ''
-  );
+    '';
 
-  // Remove sslmode from connection string to let explicit Pool SSL configuration take precedence
-  // This allows the Pool's rejectUnauthorized: false to work correctly with Aiven's self-signed certificates
-  if (url) {
-    return url.replace(/[?&]sslmode=[^&]+/g, '').replace(/[?&]$/, '');
+  if (!rawUrl) {
+    throw new Error('DATABASE_URL is not configured');
   }
 
-  return url;
+  const url = new URL(rawUrl);
+
+  // Remove SSL-related parameters to let explicit Pool SSL configuration take precedence
+  url.searchParams.delete('sslmode');
+  url.searchParams.delete('ssl');
+  url.searchParams.delete('pgbouncer');
+
+  return url.toString();
 }
 
 export function sleep(ms: number): Promise<void> {
