@@ -43,9 +43,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.connectWithRetry();
   }
 
-  private async connectWithRetry(maxAttempts = 5) {
+  private async connectWithRetry(maxAttempts = 3) {
     const dbUrl = getPrismaConnectionUrl();
     const target = this.describeTarget(dbUrl);
+
+    const retryDelays = [1000, 2000]; // 1 second, 2 seconds
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -65,7 +67,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             `Database is unavailable at ${target}. Start your database first, then retry backend startup.`,
           );
         }
-        await sleep(attempt * 1000);
+        const delay = retryDelays[attempt - 1] || retryDelays[retryDelays.length - 1];
+        await sleep(delay);
       }
     }
   }
