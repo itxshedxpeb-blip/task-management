@@ -17,11 +17,17 @@ const OPEN_STATUSES: TaskStatus[] = [
   TaskStatus.OnHold,
 ];
 
-const TASK_INCLUDE = {
+/** Heavy include for detail views – includes activities and labels. */
+const TASK_DETAIL_INCLUDE = {
   activities: {
     orderBy: { createdAt: 'desc' as const },
     take: 30,
   },
+  labels: { include: { label: true } },
+};
+
+/** Lightweight include for list queries – skips activities/labels to avoid N+1 bloat. */
+const TASK_LIST_INCLUDE = {
   labels: { include: { label: true } },
 };
 
@@ -79,7 +85,7 @@ export class TaskService extends BaseQueryService {
       extraWhere.assignedUserId = currentUser.id;
     }
 
-    const result = await super.findAll(restQuery, extraWhere, TASK_INCLUDE);
+    const result = await super.findAll(restQuery, extraWhere, TASK_LIST_INCLUDE);
     
     // Enrich each task with next follow-up info
     result.rows = result.rows.map((task: any) => this.enrichTaskWithFollowUp(task));
@@ -88,7 +94,7 @@ export class TaskService extends BaseQueryService {
   }
 
   async findById(id: string, currentUser?: CurrentUser) {
-    const task = await super.findById(id, TASK_INCLUDE);
+    const task = await super.findById(id, TASK_DETAIL_INCLUDE);
     if (currentUser) {
       this.assertOwnership(task, currentUser);
     }
@@ -163,19 +169,7 @@ export class TaskService extends BaseQueryService {
         tags: dto.tags || [],
         notes: dto.notes,
       },
-      include: TASK_INCLUDE,
-    });
-
-    // Verify the task was saved correctly by querying it back
-    const verifyTask = await this.prisma.task.findUnique({
-      where: { id: task.id },
-      select: {
-        id: true,
-        assignedUserId: true,
-        assignedUserName: true,
-        createdById: true,
-        createdByName: true,
-      },
+      include: TASK_DETAIL_INCLUDE,
     });
 
     await this.logActivity(
@@ -295,7 +289,7 @@ export class TaskService extends BaseQueryService {
     const task = await this.client.update({
       where: { id },
       data,
-      include: TASK_INCLUDE,
+      include: TASK_DETAIL_INCLUDE,
     });
 
     // Log specific activity types for each kind of change
@@ -377,7 +371,7 @@ export class TaskService extends BaseQueryService {
         completedByName: currentUser.name || 'Unknown',
         progress: 100,
       },
-      include: TASK_INCLUDE,
+      include: TASK_DETAIL_INCLUDE,
     });
 
     const changes: ActivityChange[] = [
@@ -481,13 +475,13 @@ export class TaskService extends BaseQueryService {
       this.client.findFirst({
         where: { ...baseWhere, status: 'InProgress' },
         orderBy: { updatedAt: 'desc' },
-        include: TASK_INCLUDE,
+        include: TASK_DETAIL_INCLUDE,
       }),
       this.client.findMany({
         where: { ...baseWhere, status: 'Completed' },
         orderBy: { completedAt: 'desc' },
         take: 5,
-        include: TASK_INCLUDE,
+        include: TASK_DETAIL_INCLUDE,
       }),
       this.prisma.taskActivityLog.findMany({
         where: {
@@ -669,7 +663,8 @@ export class TaskService extends BaseQueryService {
         `).then((result: any) => result[0]?.count ?? 0),
       ]);
 
-    const topPerformers = await this.getEmployeePerformance();
+    // topPerformers removed from here to avoid a redundant getEmployeePerformance()
+    // call – admin dashboard already fetches this via getAdminDashboard.
 
     return {
       openTasks,
@@ -682,85 +677,142 @@ export class TaskService extends BaseQueryService {
         completedTasks + openTasks > 0
           ? Math.round((completedTasks / (completedTasks + openTasks)) * 100)
           : 0,
-      topPerformers: topPerformers.slice(0, 5),
+      topPerformers: [],
     };
   }
 
   async getEmployeePerformance(employeeId?: string) {
-    const baseWhere = { isDeleted: false };
+    const baseWhere: any = { isDeleted: false };
+    if (employeeId) baseWhere.assignedUserId = employeeId;
 
-    const userFilter = employeeId ? { assignedUserId: employeeId } : {};
-    const allTasks = await this.client.findMany({
-      where: { ...baseWhere, ...userFilter },
-      select: {
-        id: true,
-        assignedUserId: true,
-        assignedUserName: true,
-        status: true,
-        dueDate: true,
-        completedAt: true,
-        progress: true,
-        createdAt: true,
-      },
-    });
+    const now = new Date();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const employeeMap = new Map<string, any>();
-    for (const task of allTasks) {
-      const key = task.assignedUserId || 'unassigned';
-      if (!employeeMap.has(key)) {
-        employeeMap.set(key, {
-          employeeId: task.assignedUserId,
-          employeeName: task.assignedUserName,
-          tasksAssigned: 0,
-          tasksCompleted: 0,
-          tasksPending: 0,
-          tasksOverdue: 0,
-          completionRate: 0,
-          onTimeCompletionRate: 0,
-          averageCompletionTime: 0,
-          totalPerformanceScore: 0,
-        });
-      }
-      const emp = employeeMap.get(key);
-      emp.tasksAssigned++;
+    // Use DB aggregation instead of loading all tasks into JS memory
+    const [statusGroups, totalByUser, completedTasks, overdueGroups, nameSamples] =
+      await Promise.all([
+        // Count per (userId, status)
+        this.client.groupBy({
+          by: ['assignedUserId', 'status'],
+          where: baseWhere,
+          _count: true,
+        }),
+        // Total per user
+        this.client.groupBy({
+          by: ['assignedUserId'],
+          where: baseWhere,
+          _count: true,
+        }),
+        // Completed tasks with timing info (only for on-time / avg calc)
+        this.client.findMany({
+          where: {
+            ...baseWhere,
+            status: 'Completed',
+            completedAt: { not: null },
+            dueDate: { not: null },
+            createdAt: { not: null },
+          },
+          select: {
+            assignedUserId: true,
+            assignedUserName: true,
+            completedAt: true,
+            dueDate: true,
+            createdAt: true,
+          },
+        }),
+        // Overdue count per user (groupBy)
+        this.client.groupBy({
+          by: ['assignedUserId'],
+          where: {
+            ...baseWhere,
+            dueDate: { lt: now },
+            status: { in: OPEN_STATUSES },
+          },
+          _count: true,
+        }),
+        // Get a sample of assigned names per user
+        this.client.groupBy({
+          by: ['assignedUserId', 'assignedUserName'],
+          where: baseWhere,
+          _count: true,
+        }),
+      ]);
 
-      const now = new Date();
-      if (task.status === 'Completed') {
-        emp.tasksCompleted++;
-        if (task.completedAt && task.dueDate && new Date(task.completedAt) <= new Date(task.dueDate)) {
-          emp.onTimeCompletionRate++;
-        }
-        if (task.completedAt && task.createdAt) {
-          const diffMs = new Date(task.completedAt).getTime() - new Date(task.createdAt).getTime();
-          emp.averageCompletionTime += diffMs / (1000 * 60 * 60 * 24);
-        }
-      } else if (OPEN_STATUSES.includes(task.status)) {
-        emp.tasksPending++;
-        if (task.dueDate && new Date(task.dueDate) < now) {
-          emp.tasksOverdue++;
-        }
+    // Build a name lookup from the sample data
+    const nameMap = new Map<string, string>();
+    for (const row of nameSamples as any[]) {
+      const uid = row.assignedUserId;
+      if (uid && !nameMap.has(uid)) {
+        nameMap.set(uid, row.assignedUserName || 'Unknown');
       }
     }
 
-    const performance = Array.from(employeeMap.values()).map((emp) => {
-      if (emp.tasksCompleted > 0) {
-        emp.completionRate = Math.round((emp.tasksCompleted / emp.tasksAssigned) * 100);
-        emp.onTimeCompletionRate = Math.round((emp.onTimeCompletionRate / emp.tasksCompleted) * 100);
-        emp.averageCompletionTime = Math.round((emp.averageCompletionTime / emp.tasksCompleted) * 10) / 10;
-      }
-      emp.totalPerformanceScore = Math.round(
-        emp.completionRate * 0.4 +
-          emp.onTimeCompletionRate * 0.3 +
-          Math.max(0, 100 - emp.tasksOverdue * 10) * 0.3,
+    // Build total map: userId -> count
+    const totalMap = new Map<string, number>();
+    for (const row of totalByUser as any[]) {
+      const uid = row.assignedUserId || 'unassigned';
+      totalMap.set(uid, (totalMap.get(uid) || 0) + row._count);
+    }
+
+    // Compute per-status counts
+    const statusCountMap = new Map<string, Map<string, number>>();
+    for (const row of statusGroups as any[]) {
+      const uid = row.assignedUserId || 'unassigned';
+      if (!statusCountMap.has(uid)) statusCountMap.set(uid, new Map());
+      statusCountMap.get(uid)!.set(row.status, row._count);
+    }
+
+    // Overdue per user
+    const overdueMap = new Map<string, number>();
+    for (const row of overdueGroups as any[]) {
+      overdueMap.set(row.assignedUserId || 'unassigned', row._count);
+    }
+
+    // Compute on-time and avg completion from completed tasks
+    const userCompletedStats = new Map<string, { onTime: number; totalDays: number; completed: number }>();
+    for (const t of completedTasks as any[]) {
+      const uid = t.assignedUserId || 'unassigned';
+      if (!userCompletedStats.has(uid)) userCompletedStats.set(uid, { onTime: 0, totalDays: 0, completed: 0 });
+      const stats = userCompletedStats.get(uid)!;
+      stats.completed++;
+      if (new Date(t.completedAt) <= new Date(t.dueDate)) stats.onTime++;
+      const diffMs = new Date(t.completedAt).getTime() - new Date(t.createdAt).getTime();
+      stats.totalDays += diffMs / (1000 * 60 * 60 * 24);
+    }
+
+    // Build performance array
+    const performance: any[] = [];
+    for (const [uid, totalCount] of totalMap) {
+      const sc = statusCountMap.get(uid);
+      const completed = sc?.get('Completed') || 0;
+      const pending = (sc?.get('Todo') || 0) + (sc?.get('InProgress') || 0) + (sc?.get('Draft') || 0) + (sc?.get('OnHold') || 0);
+      const overdue = overdueMap.get(uid) || 0;
+      const cStats = userCompletedStats.get(uid) || { onTime: 0, totalDays: 0, completed: 0 };
+
+      const completionRate = totalCount > 0 ? Math.round((completed / totalCount) * 100) : 0;
+      const onTimeRate = cStats.completed > 0 ? Math.round((cStats.onTime / cStats.completed) * 100) : 0;
+      const avgCompletion = cStats.completed > 0 ? Math.round((cStats.totalDays / cStats.completed) * 10) / 10 : 0;
+      const totalPerformanceScore = Math.round(
+        completionRate * 0.4 + onTimeRate * 0.3 + Math.max(0, 100 - overdue * 10) * 0.3,
       );
-      return emp;
-    });
+
+      performance.push({
+        employeeId: uid === 'unassigned' ? undefined : uid,
+        employeeName: nameMap.get(uid) || 'Unknown',
+        tasksAssigned: totalCount,
+        tasksCompleted: completed,
+        tasksPending: pending,
+        tasksOverdue: overdue,
+        completionRate,
+        onTimeCompletionRate: onTimeRate,
+        averageCompletionTime: avgCompletion,
+        totalPerformanceScore,
+      });
+    }
 
     performance.sort((a, b) => b.totalPerformanceScore - a.totalPerformanceScore);
     performance.forEach((emp, i) => {
       emp.rank = i + 1;
-      emp.percentile = Math.round(((performance.length - i) / performance.length) * 100);
+      emp.percentile = performance.length > 0 ? Math.round(((performance.length - i) / performance.length) * 100) : 0;
     });
 
     return performance;
@@ -868,18 +920,21 @@ export class TaskService extends BaseQueryService {
 
     employees.sort((a, b) => (a.online === b.online ? b.totalPerformanceScore - a.totalPerformanceScore : a.online ? -1 : 1));
 
+    // Derive summary counts from already-fetched performance data to avoid redundant DB queries
+    const totalTasks = performance.reduce((sum: number, emp: any) => sum + emp.tasksAssigned, 0);
+    const openTasks = performance.reduce((sum: number, emp: any) => sum + emp.tasksPending, 0);
+    const overdueTasks = performance.reduce((sum: number, emp: any) => sum + emp.tasksOverdue, 0);
+
     return {
       summary: {
         totalEmployees: users.length,
         onlineEmployees: employees.filter((e) => e.online).length,
-        totalTasks: await this.client.count({ where: { isDeleted: false } }),
-        openTasks: await this.client.count({ where: { isDeleted: false, status: { in: OPEN_STATUSES } } }),
+        totalTasks,
+        openTasks,
         completedToday: await this.client.count({
           where: { isDeleted: false, status: 'Completed', completedAt: { gte: todayStart, lte: todayEnd } },
         }),
-        overdueTasks: await this.client.count({
-          where: { isDeleted: false, dueDate: { lt: now }, status: { in: OPEN_STATUSES } },
-        }),
+        overdueTasks,
       },
       employees,
     };

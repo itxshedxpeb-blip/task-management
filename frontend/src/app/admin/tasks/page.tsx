@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -33,6 +33,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/date-utils';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/modules/admin/services/adminApi';
 import { useDeleteTask, useCreateTask, useTaskSocket } from '@/modules/tasks/hooks/useTasks';
 import { STATUS_LABELS } from '@/features/task-management/constants/taskConfig';
@@ -162,63 +163,80 @@ function CreateTaskDialog({
 
 export default function AdminTasksPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [page, setPage] = useState(1);
   const pageSize = 15;
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
-
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [pagination, setPagination] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteTitle, setDeleteTitle] = useState('');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [globalFilters, setGlobalFilters] = useState<GlobalFilters>({ datePreset: 'last-7-days' });
-  const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const deleteTask = useDeleteTask();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const socket = useTaskSocket();
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(false);
-    try {
-      const params: Record<string, any> = { page, pageSize };
-      if (globalFilters.search || search) params.search = globalFilters.search || search;
-      if (globalFilters.status || statusFilter !== 'all') params.status = globalFilters.status || statusFilter;
-      if (globalFilters.priority || priorityFilter !== 'all') params.priority = globalFilters.priority || priorityFilter;
-      if (globalFilters.sortBy) params.sortBy = globalFilters.sortBy;
-      if (globalFilters.sortOrder) params.sortOrder = globalFilters.sortOrder;
-      if (globalFilters.dateFrom) params.dateFrom = globalFilters.dateFrom;
-      if (globalFilters.dateTo) params.dateTo = globalFilters.dateTo;
-      
-      // Parallel API calls to avoid waterfall
-      const [tasksRes, empRes] = await Promise.all([
-        adminApi.getAllTasks(params),
-        adminApi.getEmployees(),
-      ]);
-      
-      const data = tasksRes?.data || tasksRes;
-      setTasks(data?.rows || []);
-      setPagination(data?.pagination || null);
-      const employeesData = empRes?.data || empRes;
-      setEmployees(Array.isArray(employeesData) ? employeesData : employeesData?.rows || []);
-    } catch {
-      setError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, search, statusFilter, priorityFilter, globalFilters]);
+  // Debounce search
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useMemo(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  // Set up Socket.IO listeners for real-time updates
-  useEffect(() => {
+  // Build query params
+  const queryParams = useMemo(() => {
+    const params: Record<string, any> = { page, pageSize };
+    if (globalFilters.search || debouncedSearch) params.search = globalFilters.search || debouncedSearch;
+    if (globalFilters.status || statusFilter !== 'all') params.status = globalFilters.status || statusFilter;
+    if (globalFilters.priority || priorityFilter !== 'all') params.priority = globalFilters.priority || priorityFilter;
+    if (globalFilters.sortBy) params.sortBy = globalFilters.sortBy;
+    if (globalFilters.sortOrder) params.sortOrder = globalFilters.sortOrder;
+    if (globalFilters.dateFrom) params.dateFrom = globalFilters.dateFrom;
+    if (globalFilters.dateTo) params.dateTo = globalFilters.dateTo;
+    return params;
+  }, [page, pageSize, debouncedSearch, statusFilter, priorityFilter, globalFilters]);
+
+  // React Query for tasks - automatic caching, deduplication, cancellation
+  const { data: tasksData, isLoading, error, refetch } = useQuery({
+    queryKey: ['admin-tasks', queryParams],
+    queryFn: async () => {
+      const res = await adminApi.getAllTasks(queryParams);
+      const data = (res as any)?.data || res;
+      return {
+        rows: data?.rows || [],
+        pagination: data?.pagination || null,
+      };
+    },
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // React Query for employees - LONG stale time since employees rarely change
+  const { data: employeesData } = useQuery({
+    queryKey: ['admin-employees-list'],
+    queryFn: async () => {
+      const res = await adminApi.getEmployees();
+      const data = (res as any)?.data || res;
+      return Array.isArray(data) ? data : data?.rows || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes - employees rarely change
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const tasks = tasksData?.rows || [];
+  const pagination = tasksData?.pagination || null;
+  const employees = employeesData || [];
+
+  // Socket events only invalidate tasks, NOT employees
+  useQueryClient(); // ensure qc is available
+  useMemo(() => {
     if (!socket) return;
 
     const handleTaskEvent = () => {
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['admin-tasks'] });
     };
 
     socket.on('task:created', handleTaskEvent);
@@ -232,10 +250,8 @@ export default function AdminTasksPage() {
       socket.off('task:completed', handleTaskEvent);
       socket.off('task:deleted', handleTaskEvent);
     };
-  }, [socket, fetchData]);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
 
   const filteredTasks = useMemo(() => {
     if (!globalFilters.completion) return tasks;
@@ -265,34 +281,33 @@ export default function AdminTasksPage() {
           <CardContent className="p-12 text-center">
             <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
             <p className="font-medium mb-1">Failed to load tasks</p>
-            <Button onClick={() => fetchData()} variant="outline" size="sm" className="mt-3">
+            <Button onClick={() => refetch()} variant="outline" size="sm" className="mt-3">
               <RefreshCw className="h-4 w-4 mr-2" /> Retry
             </Button>
           </CardContent>
         </Card>
-      {deleteId && (
-        <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) { setDeleteId(null); setDeleteTitle(''); } }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Delete Task</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete &quot;{deleteTitle}&quot;? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => { setDeleteId(null); setDeleteTitle(''); }}>Cancel</Button>
-              <Button variant="destructive" onClick={async () => {
-                await deleteTask.mutateAsync(deleteId);
-                setDeleteId(null);
-                setDeleteTitle('');
-                fetchData();
-              }} disabled={deleteTask.isPending}>
-                {deleteTask.isPending ? 'Deleting...' : 'Delete'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+        {deleteId && (
+          <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) { setDeleteId(null); setDeleteTitle(''); } }}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete Task</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete &quot;{deleteTitle}&quot;? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setDeleteId(null); setDeleteTitle(''); }}>Cancel</Button>
+                <Button variant="destructive" onClick={async () => {
+                  await deleteTask.mutateAsync(deleteId);
+                  setDeleteId(null);
+                  setDeleteTitle('');
+                }} disabled={deleteTask.isPending}>
+                  {deleteTask.isPending ? 'Deleting...' : 'Delete'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
     </div>
   );
 }
@@ -310,7 +325,7 @@ export default function AdminTasksPage() {
                 {(pagination?.total ?? filteredTasks.length) !== 1 ? 's' : ''}
               </p>
             </div>
-            <Button variant="outline" size="sm" className="h-9" onClick={() => fetchData()}>
+            <Button variant="outline" size="sm" className="h-9" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4 mr-1.5" /> Refresh
             </Button>
           </div>
@@ -447,7 +462,6 @@ export default function AdminTasksPage() {
                   await deleteTask.mutateAsync(deleteId);
                   setDeleteId(null);
                   setDeleteTitle('');
-                  fetchData();
                 }} disabled={deleteTask.isPending}>
                   {deleteTask.isPending ? 'Deleting...' : 'Delete'}
                 </Button>
@@ -470,7 +484,7 @@ export default function AdminTasksPage() {
           <Button size="sm" onClick={() => setCreateTaskOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Create Task
           </Button>
-          <Button variant="outline" size="sm" onClick={() => fetchData()}>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
         </div>

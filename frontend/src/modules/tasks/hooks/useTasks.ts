@@ -32,6 +32,8 @@ export function useTasks(params?: {
   sortOrder?: 'asc' | 'desc';
   dateFrom?: string;
   dateTo?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
   /** When true, skips the default 7-day window (shows all tasks). */
   showAll?: boolean;
 }) {
@@ -75,6 +77,8 @@ export function useTasks(params?: {
       if (params?.sortOrder) query.sortOrder = params.sortOrder;
       if (params?.dateFrom) query.dateFrom = params.dateFrom;
       if (params?.dateTo) query.dateTo = params.dateTo;
+      if (params?.dueDateFrom) query.dueDateFrom = params.dueDateFrom;
+      if (params?.dueDateTo) query.dueDateTo = params.dueDateTo;
       if (!params?.showAll && !params?.dateFrom && !params?.dateTo) {
         query.dateFrom = dayjs().tz('Asia/Kolkata').subtract(7, 'day').format('YYYY-MM-DD');
         query.dateTo = dayjs().tz('Asia/Kolkata').format('YYYY-MM-DD');

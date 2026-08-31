@@ -1,6 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
 import { useRouter } from 'next/navigation';
 import {
   Plus,
@@ -169,6 +178,7 @@ export default function TasksPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pageSize = 15;
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -185,7 +195,7 @@ export default function TasksPage() {
   const { data, isLoading, error, refetch } = useTasks({
     page,
     pageSize,
-    search: globalFilters.search || search || undefined,
+    search: globalFilters.search || debouncedSearch || undefined,
     status: (globalFilters.status || (statusFilter !== 'all' ? statusFilter : undefined)) as TaskStatus | undefined,
     priority: (globalFilters.priority || (priorityFilter !== 'all' ? priorityFilter : undefined)) as TaskPriority | undefined,
     sortBy: globalFilters.sortBy,

@@ -148,10 +148,10 @@ export default function TodayPage() {
   const today = dayjs().tz('Asia/Kolkata');
   const todayKey = today.format('YYYY-MM-DD');
 
-  // Fetch all tasks (no date filter - backend ignores dateFrom/dateTo)
+  // Fetch recent tasks; client-side filters to today's view
   const { data, isLoading, error, refetch } = useTasks({ 
-    pageSize: 500, 
-    showAll: true 
+    pageSize: 100, 
+    showAll: true,
   });
 
   const tasks = data?.rows || [];

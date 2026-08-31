@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useTasks, useCreateTask } from '@/modules/tasks/hooks/useTasks';
+import { useTaskStats } from '@/features/task-management/hooks/useTaskManagement';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { Task, TaskStatus, TaskPriority } from '@/features/task-management/types';
 
@@ -137,10 +138,13 @@ function TaskCard({ task }: { task: Task }) {
 export default function BoardPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TaskStatus>('Todo');
-  const { data: allTasks, isLoading, error, refetch } = useTasks({ pageSize: 200 });
+  const { data: allTasks, isLoading, error, refetch } = useTasks({ 
+    pageSize: 50, 
+    status: activeTab,
+  });
+  const { data: stats } = useTaskStats();
 
   const tasks = allTasks?.rows || [];
-  const filteredTasks = tasks.filter((t) => t.status === activeTab);
 
   if (error && !isLoading) {
     return (
@@ -160,7 +164,9 @@ export default function BoardPage() {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex overflow-x-auto gap-2 px-4 py-3 scrollbar-hide">
           {STATUS_TABS.map((tab) => {
-            const count = tasks.filter((t) => t.status === tab.status).length;
+            const count = tab.status === activeTab 
+              ? (allTasks?.pagination?.total ?? tasks.length) 
+              : (stats as any)?.tasksByStatus?.[tab.status] ?? 0;
             const isActive = activeTab === tab.status;
             return (
               <button
@@ -184,13 +190,13 @@ export default function BoardPage() {
       <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {isLoading ? (
           <BoardSkeleton />
-        ) : filteredTasks.length === 0 ? (
+        ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <Inbox className="h-12 w-12 mb-4" />
             <p>No tasks in {STATUS_TABS.find(t => t.status === activeTab)?.label}</p>
           </div>
         ) : (
-          filteredTasks.map((task) => <TaskCard key={task.id} task={task} />)
+          tasks.map((task: Task) => <TaskCard key={task.id} task={task} />)
         )}
       </div>
 

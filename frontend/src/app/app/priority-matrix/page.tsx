@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useTasks, useCreateTask } from '@/modules/tasks/hooks/useTasks';
+import { useTaskStats } from '@/features/task-management/hooks/useTaskManagement';
 import { useAuth } from '@/features/auth/AuthContext';
 import type { Task, TaskPriority } from '@/features/task-management/types';
 
@@ -133,10 +134,13 @@ function CreateTaskDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
 export default function PriorityMatrixPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TaskPriority | 'all'>('all');
-  const { data, isLoading, error, refetch } = useTasks({ pageSize: 500 });
+  const { data, isLoading, error, refetch } = useTasks({ 
+    pageSize: 50, 
+    priority: activeTab === 'all' ? undefined : activeTab as any,
+  });
+  const { data: stats } = useTaskStats();
 
   const tasks = data?.rows || [];
-  const filteredTasks = activeTab === 'all' ? tasks : tasks.filter((t) => t.priority === activeTab);
 
   if (error) {
     return (
@@ -156,7 +160,9 @@ export default function PriorityMatrixPage() {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex overflow-x-auto gap-2 px-4 py-3 scrollbar-hide">
           {PRIORITY_TABS.map((tab) => {
-            const count = tab.priority === 'all' ? tasks.length : tasks.filter((t) => t.priority === tab.priority).length;
+            const count = tab.priority === 'all' 
+              ? (data?.pagination?.total ?? tasks.length) 
+              : (stats as any)?.tasksByPriority?.[tab.priority] ?? 0;
             const isActive = activeTab === tab.priority;
             return (
               <button
@@ -185,13 +191,13 @@ export default function PriorityMatrixPage() {
               <Skeleton key={i} className="h-24 w-full rounded-2xl" />
             ))}
           </div>
-        ) : filteredTasks.length === 0 ? (
+        ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <AlertTriangle className="h-12 w-12 mb-4" />
             <p>No tasks in {PRIORITY_TABS.find(t => t.priority === activeTab)?.label}</p>
           </div>
         ) : (
-          filteredTasks.map((task) => <TaskCard key={task.id} task={task} />)
+          tasks.map((task: Task) => <TaskCard key={task.id} task={task} />)
         )}
       </div>
 

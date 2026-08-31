@@ -43,7 +43,9 @@ const pwaConfig = withPWA({
   register: false,
   skipWaiting: true,
   disable: true,
-  buildExcludes: [/middleware-manifest\.json$/, /icon\.svg$/, /_buildManifest\.js$/],
+  // Do NOT generate a service-worker file – a minimal cleanup SW
+  // lives in public/sw.js to tear down any stale previous installs.
+  buildExcludes: [/middleware-manifest\.json$/, /icon\.svg$/, /_buildManifest\.js$/, /sw\.js$/],
 });
 
 const bundleAnalyzerConfig = withBundleAnalyzer({

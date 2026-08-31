@@ -79,11 +79,9 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: (data: CreateTaskDto) => taskManagementApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['my-task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-task-kpis'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
@@ -95,11 +93,9 @@ export function useUpdateTask() {
     mutationFn: ({ id, data }: { id: string; data: UpdateTaskDto }) =>
       taskManagementApi.update(id, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['my-task-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
@@ -110,10 +106,8 @@ export function useDeleteTask() {
   return useMutation({
     mutationFn: (id: string) => taskManagementApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['my-task-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
@@ -125,11 +119,9 @@ export function useCompleteTask() {
     mutationFn: ({ id, data }: { id: string; data: CompleteTaskDto }) =>
       taskManagementApi.complete(id, data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['task-stats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-task-kpis'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
@@ -296,9 +288,6 @@ export function useCreateActivity() {
       queryClient.invalidateQueries({ queryKey: ['task-activities', variables.taskId] });
       queryClient.invalidateQueries({ queryKey: ['module-task', variables.taskId] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['module-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['task-stats'] });
     },
   });
 }
@@ -333,18 +322,10 @@ export function useDeleteActivity() {
 
 // ─── Notification Hooks ───────────────────────────────────────────────────────
 
-export function useNotifications(userId?: string) {
-  return useQuery({
-    queryKey: ['notifications', userId],
-    queryFn: async () => {
-      const res = await api.get<any>('/notifications', { params: { pageSize: 50 } });
-      return res.data?.rows || [];
-    },
-    staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
-  });
-}
-
+/**
+ * Lightweight unread-count hook.  Polls every 60 s and is used by the header badge.
+ * This is the only notification request that runs continuously.
+ */
 export function useUnreadNotificationCount() {
   return useQuery({
     queryKey: ['notifications-unread-count'],
@@ -354,6 +335,24 @@ export function useUnreadNotificationCount() {
     },
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,
+  });
+}
+
+/**
+ * Full notification list.  Only actively polls while the notification panel is open
+ * (controlled by `enabled`).  When the panel is closed the query goes stale but
+ * does not refetch, eliminating the double-polling that previously occurred.
+ */
+export function useNotifications(userId?: string, enabled = true) {
+  return useQuery({
+    queryKey: ['notifications', userId],
+    queryFn: async () => {
+      const res = await api.get<any>('/notifications', { params: { pageSize: 50 } });
+      return res.data?.rows || [];
+    },
+    staleTime: 30 * 1000,
+    refetchInterval: enabled ? 60 * 1000 : false,
+    enabled,
   });
 }
 

@@ -106,10 +106,14 @@ export default function CalendarPage() {
   const monthStartIST = dayjs().year(currentYear).month(currentMonth).startOf('month').format('YYYY-MM-DD');
   const monthEndIST = dayjs().year(currentYear).month(currentMonth).endOf('month').format('YYYY-MM-DD');
 
-  // Fetch all tasks (no date filter - backend ignores dateFrom/dateTo)
+  // Server-side filter: dueDate within the visible month range.
+  // The backend supports dueDateFrom/dueDateTo params.
+  // createdAt and nextFollowUpDate mapping still happens client-side.
   const { data, isLoading, error, refetch } = useTasks({ 
-    pageSize: 500, 
-    showAll: true 
+    pageSize: 200, 
+    showAll: true,
+    dueDateFrom: monthStartIST,
+    dueDateTo: monthEndIST,
   });
 
   const tasks = data?.rows || [];

@@ -219,6 +219,11 @@ model Task {
   @@index([isArchived])
   @@index([isPinned])
   @@index([isFavorite])
+  // Composite indexes for hot query patterns (dashboard, task lists, KPIs)
+  @@index([isDeleted, assignedUserId, status])     // user task list filtered by status
+  @@index([isDeleted, status, dueDate])             // overdue / due-today queries
+  @@index([isDeleted, status, completedAt])         // completion-date queries
+  @@index([isDeleted, assignedUserId, dueDate])     // dashboard due queries per user
 }
 
 model TaskChecklist {
